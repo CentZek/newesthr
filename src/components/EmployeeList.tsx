@@ -25,8 +25,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 }) => {
   const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
   const [timeEditModalOpen, setTimeEditModalOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedRawData, setExpandedRawData] = useState<{empIndex: number, dayIndex: number} | null>(null);
   
@@ -40,43 +39,29 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const [itemToApprove, setItemToApprove] = useState<{empIndex: number, dayIndex: number} | null>(null);
   const [isApprovingItem, setIsApprovingItem] = useState(false);
 
-  // When employee records update, reset modal if the selected day/employee is no longer found
-  useEffect(() => {
-    if (selectedDate && selectedEmployee !== null) {
-      const employee = employeeRecords[selectedEmployee];
-      if (employee) {
-        const dayIndex = employee.days.findIndex(d => d.date === selectedDate);
-        if (dayIndex === -1) {
-          // The day we were editing is no longer in the employee's records
-          setTimeEditModalOpen(false);
-          setSelectedEmployee(null);
-          setSelectedDay(null);
-          setSelectedDate(null);
-        } else {
-          // Update the day index if it changed
-          setSelectedDay(dayIndex);
-        }
-      } else {
-        // The employee we were working with is no longer in the records
-        setTimeEditModalOpen(false);
-        setSelectedEmployee(null);
-        setSelectedDay(null);
-        setSelectedDate(null);
-      }
-    }
-  }, [employeeRecords, selectedDate, selectedEmployee]);
+  // Find employee and day indices by IDs for stable references across rerenders
+  const findIndices = (employeeId: string, date: string): { empIndex: number, dayIndex: number } | null => {
+    const empIndex = employeeRecords.findIndex(e => e.employeeNumber === employeeId);
+    if (empIndex === -1) return null;
+    
+    const dayIndex = employeeRecords[empIndex].days.findIndex(d => d.date === date);
+    if (dayIndex === -1) return null;
+    
+    return { empIndex, dayIndex };
+  };
 
   const openPenaltyModal = (empIndex: number, dayIndex: number) => {
-    setSelectedEmployee(empIndex);
-    setSelectedDay(dayIndex);
+    const employee = employeeRecords[empIndex];
+    setSelectedEmployeeId(employee.employeeNumber);
+    setSelectedDate(employee.days[dayIndex].date);
     setPenaltyModalOpen(true);
   };
 
   const openTimeEditModal = (empIndex: number, dayIndex: number) => {
-    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${employeeRecords[empIndex].days[dayIndex].date}`);
-    setSelectedEmployee(empIndex);
-    setSelectedDay(dayIndex);
-    setSelectedDate(employeeRecords[empIndex].days[dayIndex].date);
+    console.log(`Opening edit modal for employee ${empIndex} (${employeeRecords[empIndex].employeeNumber}), day index ${dayIndex}, date ${employeeRecords[empIndex].days[dayIndex].date}`);
+    const employee = employeeRecords[empIndex];
+    setSelectedEmployeeId(employee.employeeNumber);
+    setSelectedDate(employee.days[dayIndex].date);
     setTimeEditModalOpen(true);
   };
 
@@ -325,8 +310,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <button 
               onClick={() => openTimeEditModal(empIndex, dayIndex)} 
               data-date={day.date}
-              className={`p-1 rounded-full ${day.missingCheckIn || day.missingCheckOut || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`}
-            >
+              className={`p-1 rounded-full ${day.missingCheckIn || day.missingCheckOut || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`}>
               <PenSquare className="w-5 h-5" />
             </button>
             <button onClick={() => openPenaltyModal(empIndex, dayIndex)} className={`p-1 rounded-full text-gray-600 hover:bg-gray-100 ${isOffDay || isLeaveDay ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isOffDay || isLeaveDay}>
@@ -608,9 +592,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <button 
                               onClick={() => openTimeEditModal(empIndex, dayIndex)} 
                               data-date={day.date}
-                              className={`p-1 rounded-full ${hasMissingRecords || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`} 
-                              title={wasCorrected ? "Edit time (Fixed records)" : "Edit Time"}
-                            >
+                              className={`p-1 rounded-full ${hasMissingRecords || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`} title={wasCorrected ? "Edit time (Fixed records)" : "Edit Time"}>
                               <PenSquare className="w-5 h-5" />
                             </button>
                             <button onClick={() => openPenaltyModal(empIndex, dayIndex)} className={`p-1 rounded-full text-gray-600 hover:bg-gray-100 ${isOffDay || isLeaveDay ? 'opacity-50 cursor-not-allowed' : ''}`} title="Apply Penalty" disabled={isOffDay || isLeaveDay}>
@@ -650,41 +632,68 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
         );
       })}
 
-      {penaltyModalOpen && selectedEmployee !== null && selectedDay !== null && (
-        <PenaltyModal 
-          employee={employeeRecords[selectedEmployee]}
-          day={employeeRecords[selectedEmployee].days[selectedDay]}
-          onClose={() => setPenaltyModalOpen(false)}
-          onApply={(penaltyMinutes) => {
-            handleApplyPenalty(selectedEmployee, selectedDay, penaltyMinutes);
-            setPenaltyModalOpen(false);
-            setSelectedEmployee(null);
-            setSelectedDay(null);
-          }}
-        />
-      )}
-      
-      {timeEditModalOpen && selectedEmployee !== null && selectedDate && (
-        <TimeEditModal
-          employee={employeeRecords[selectedEmployee]}
-          day={employeeRecords[selectedEmployee].days.find(d => d.date === selectedDate)!}
-          onClose={() => {
-            setTimeEditModalOpen(false);
-            setSelectedEmployee(null);
-            setSelectedDay(null);
-            setSelectedDate(null);
-          }}
-          onSave={(checkIn, checkOut, shiftType, notes) => {
-            if (selectedDay !== null) {
-              handleEditTime(selectedEmployee, selectedDay, checkIn, checkOut, shiftType, notes);
+      {penaltyModalOpen && selectedEmployeeId !== null && selectedDate !== null && (() => {
+        // Find employee and day by ID and date (stable identifiers)
+        for (const employee of employeeRecords) {
+          if (employee.employeeNumber === selectedEmployeeId) {
+            const day = employee.days.find(d => d.date === selectedDate);
+            if (day) {
+              return (
+                <PenaltyModal 
+                  employee={employee}
+                  day={day}
+                  onClose={() => setPenaltyModalOpen(false)}
+                  onApply={(penaltyMinutes) => {
+                    const indices = findIndices(selectedEmployeeId, selectedDate!);
+                    if (indices) {
+                      handleApplyPenalty(indices.empIndex, indices.dayIndex, penaltyMinutes);
+                    }
+                    setPenaltyModalOpen(false);
+                    setSelectedEmployeeId(null);
+                    setSelectedDate(null);
+                  }}
+                />
+              );
             }
-            setTimeEditModalOpen(false);
-            setSelectedEmployee(null);
-            setSelectedDay(null);
-            setSelectedDate(null);
-          }}
-        />
-      )}
+          }
+        }
+        return null;
+      })()}
+      
+      {timeEditModalOpen && selectedEmployeeId !== null && selectedDate !== null && (() => {
+        // Find employee and day by ID and date (stable identifiers)
+        for (const employee of employeeRecords) {
+          if (employee.employeeNumber === selectedEmployeeId) {
+            const day = employee.days.find(d => d.date === selectedDate);
+            if (day) {
+              // Find indices for the callback
+              const empIndex = employeeRecords.findIndex(e => e.employeeNumber === selectedEmployeeId);
+              const dayIndex = employeeRecords[empIndex].days.findIndex(d => d.date === selectedDate);
+              
+              return (
+                <TimeEditModal
+                  employee={employee}
+                  day={day}
+                  onClose={() => {
+                    setTimeEditModalOpen(false);
+                    setSelectedEmployeeId(null);
+                    setSelectedDate(null);
+                  }}
+                  onSave={(checkIn, checkOut, shiftType, notes) => {
+                    if (empIndex !== -1 && dayIndex !== -1) {
+                      handleEditTime(empIndex, dayIndex, checkIn, checkOut, shiftType, notes);
+                    }
+                    setTimeEditModalOpen(false);
+                    setSelectedEmployeeId(null);
+                    setSelectedDate(null);
+                  }}
+                />
+              );
+            }
+          }
+        }
+        return null;
+      })()}
       
       {/* Approve All Confirmation Dialog */}
       <ConfirmDialog
