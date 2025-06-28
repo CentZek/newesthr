@@ -161,125 +161,57 @@ export const calculateHoursWorked = (checkInTime: Date, checkOutTime: Date): num
 
 // Calculate payable hours with business rules applied
 export const calculatePayableHours = (
-  checkInTime: Date, 
-  checkOutTime: Date, 
+  checkInTime: Date,
+  checkOutTime: Date,
   shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'custom' | null,
   penaltyMinutes: number = 0,
-  isManualEdit: boolean = false // New parameter to indicate manual time edits
+  isManualEdit: boolean = false
 ): number => {
-  // If shift type is null, try to determine it
   if (!shiftType) {
     shiftType = determineShiftType(checkInTime);
   }
-  
-  console.log(`Calculating payable hours for ${format(checkInTime, 'yyyy-MM-dd HH:mm')} to ${format(checkOutTime, 'yyyy-MM-dd HH:mm')}, shift: ${shiftType}, penalty: ${penaltyMinutes} minutes, isManualEdit: ${isManualEdit}`);
-  
-  // Handle night shift specially - use specific calculation
+
   if (shiftType === 'night') {
     return calculateNightShiftHours(checkInTime, checkOutTime, penaltyMinutes, isManualEdit);
   }
-  
-  // Calculate minutes between check-in and check-out
+
   let diffInMinutes = differenceInMinutes(checkOutTime, checkInTime);
-  
-  // Log the raw time difference before penalty
-  console.log(`Raw time difference: ${diffInMinutes} minutes (${(diffInMinutes/60).toFixed(2)} hours)`);
-  
-  // Convert to hours
   let hours = diffInMinutes / 60;
-  
-  // Store the raw, penalty-adjusted hours before business rules
-  let penaltyAdjustedHours = hours;
-  
-  // For manual edits, always use the exact calculated hours
-  if (isManualEdit) {
-    console.log(`Manual edit detected - using exact calculated time: ${hours.toFixed(2)} hours`);
-    
-    // Apply penalty if any
-    if (penaltyMinutes > 0) {
-      const penaltyHours = penaltyMinutes / 60;
-      hours = Math.max(0, hours - penaltyHours);
-      console.log(`After penalty application: ${hours.toFixed(2)} hours`);
-    }
-    
-    // Round to exactly a 2 decimal number
-    const finalHours = parseFloat(hours.toFixed(2));
-    console.log(`Final hours (manual edit): ${finalHours}`);
-    return finalHours;
-  }
-  
-  // Apply business rules for standardized hours
-  
-  // Excessive overtime: If > 9.5, preserve actual hours worked
-  // but if > 15, cap at 15 hours
-  if (hours > 15.0) {
-    hours = 15.0;
-    console.log(`Capped excessive hours to 15.0`);
-  } else if (hours > 9.5) {
-    // For substantial overtime, round to the nearest 15 minutes
-    hours = Math.round(hours * 4) / 4;
-    console.log(`Rounded substantial overtime to ${hours} hours`);
-  } else {
-    // For regular shifts, check if checkout is after the early leave time
-    let earlyLeaveHour = 0;
-    let earlyLeaveMinute = 0;
-    
-    if (shiftType === 'canteen') {
-      // Check if this is a 7AM shift or 8AM shift
-      const checkInHour = checkInTime.getHours();
-      if (checkInHour <= 7) {
-        // 7AM shift
-        earlyLeaveHour = 15; // 3 PM
-        earlyLeaveMinute = 30; // 3:30 PM
-      } else {
-        // 8AM shift
-        earlyLeaveHour = 16; // 4 PM
-        earlyLeaveMinute = 30; // 4:30 PM
-      }
-    } else if (shiftType === 'night') {
-      // For night shifts, early leave time is typically 5:30 AM
-      earlyLeaveHour = 5;
-      earlyLeaveMinute = 30;
-    } else if (shiftType) {
-      // Regular shifts
-      earlyLeaveHour = SHIFT_TIMES[shiftType].earlyLeaveTime.hour;
-      earlyLeaveMinute = SHIFT_TIMES[shiftType].earlyLeaveTime.minute;
-    }
-    
-    // Check if checkout is after early leave time
-    if (
-      checkOutTime.getHours() > earlyLeaveHour || 
-      (checkOutTime.getHours() === earlyLeaveHour && checkOutTime.getMinutes() >= earlyLeaveMinute)
-    ) {
-      // If they checked out after the early leave time, give full 9 hours
-      console.log(`Checked out after early leave time: giving 9 hours`);
-      hours = 9.0;
-    } else if (hours >= 8.5) {
-      // If they worked enough time (8.5+ hours), give them 9 hours
-      console.log(`Worked at least 8.5 hours: giving 9 hours`);
-      hours = 9.0;
-    }
-  }
-  
-  // Apply penalty - ensure hours are reduced if there are penalty minutes
-  // Convert penalty minutes to hours
+
   if (penaltyMinutes > 0) {
-    const penaltyHours = penaltyMinutes / 60;
-    // If penalty is for a full day or more, ensure hours are 0
-    if (penaltyHours >= 9) {
-      hours = 0;
-      console.log(`Applied full day penalty: 0 hours`);
-    } else {
-      // Otherwise make sure hours are reduced by the penalty
-      hours = Math.max(0, hours - penaltyHours);
-      console.log(`After penalty application: ${hours.toFixed(2)} hours`);
+    hours = Math.max(0, hours - penaltyMinutes / 60);
+  }
+
+  if (isManualEdit) {
+    return parseFloat(hours.toFixed(2));
+  }
+
+  const rawWorkedHours = hours;
+  const MINIMUM_HOURS_FOR_FULL_SHIFT = 8.5;
+  const STANDARD_SHIFT_HOURS = 9;
+
+  if (shiftType === 'morning' || shiftType === 'canteen') {
+    const checkOutHour = checkOutTime.getHours();
+    const checkOutMinute = checkOutTime.getMinutes();
+
+    let earlyLeaveHour = 15;
+    let earlyLeaveMinute = 30;
+
+    if (shiftType === 'canteen' && checkInTime.getHours() >= 8) {
+      earlyLeaveHour = 16;
+      earlyLeaveMinute = 30;
+    }
+
+    const leftAfterEarlyLeave =
+      checkOutHour > earlyLeaveHour ||
+      (checkOutHour === earlyLeaveHour && checkOutMinute >= earlyLeaveMinute);
+
+    if (leftAfterEarlyLeave && rawWorkedHours >= MINIMUM_HOURS_FOR_FULL_SHIFT) {
+      hours = STANDARD_SHIFT_HOURS;
     }
   }
-  
-  // Round to exactly a 2 decimal number
-  const finalHours = parseFloat(hours.toFixed(2));
-  console.log(`Final payable hours: ${finalHours}`);
-  return finalHours;
+
+  return parseFloat(hours.toFixed(2));
 };
 
 // Calculate night shift hours with special handling for cross-day shifts
