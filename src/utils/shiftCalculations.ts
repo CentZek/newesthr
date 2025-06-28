@@ -247,16 +247,18 @@ export const calculatePayableHours = (
     }
     
     // Check if checkout is after early leave time
-    if (
-      checkOutTime.getHours() > earlyLeaveHour || 
-      (checkOutTime.getHours() === earlyLeaveHour && checkOutTime.getMinutes() >= earlyLeaveMinute)
-    ) {
-      // If they checked out after the early leave time, give full 9 hours
-      console.log(`Checked out after early leave time: giving 9 hours`);
-      hours = 9.0;
-    } else if (hours >= 8.5) {
-      // If they worked enough time (8.5+ hours), give them 9 hours
-      console.log(`Worked at least 8.5 hours: giving 9 hours`);
+    const leftAfterEarlyLeave = checkOutTime.getHours() > earlyLeaveHour || 
+                              (checkOutTime.getHours() === earlyLeaveHour && 
+                               checkOutTime.getMinutes() >= earlyLeaveMinute);
+
+    // Define the minimum hours required to get full shift credit
+    const MINIMUM_HOURS_FOR_FULL_SHIFT = 8.5;
+
+    // Only give full 9 hours if BOTH conditions are met:
+    // 1. Left after early leave threshold
+    // 2. Worked at least 8.5 hours in total
+    if (leftAfterEarlyLeave && hours >= MINIMUM_HOURS_FOR_FULL_SHIFT) {
+      console.log(`Checked out after early leave time AND worked at least ${MINIMUM_HOURS_FOR_FULL_SHIFT} hours: giving 9 hours`);
       hours = 9.0;
     }
   }
@@ -377,13 +379,15 @@ export const calculateNightShiftHours = (
     const checkOutHour = checkOut.getHours();
     const checkOutMinute = checkOut.getMinutes();
     
-    if (checkOutHour > 5 || (checkOutHour === 5 && checkOutMinute >= 30)) {
-      // If they checked out after 5:30 AM, give full 9 hours
-      console.log(`Checked out after early leave threshold (5:30 AM): giving 9 hours`);
-      hours = 9.0;
-    } else if (hours >= 8.5) {
-      // If they worked at least 8.5 hours, give them 9 hours
-      console.log(`Worked at least 8.5 hours: giving 9 hours`);
+    // Define the minimum hours required to get full shift credit
+    const MINIMUM_HOURS_FOR_FULL_SHIFT = 8.5;
+    const leftAfterEarlyLeave = checkOutHour > 5 || (checkOutHour === 5 && checkOutMinute >= 30);
+    
+    // Only give full 9 hours if BOTH conditions are met:
+    // 1. Left after early leave threshold (5:30 AM)
+    // 2. Worked at least 8.5 hours in total
+    if (leftAfterEarlyLeave && hours >= MINIMUM_HOURS_FOR_FULL_SHIFT) {
+      console.log(`Checked out after early leave threshold (5:30 AM) AND worked at least ${MINIMUM_HOURS_FOR_FULL_SHIFT} hours: giving 9 hours`);
       hours = 9.0;
     }
   }
