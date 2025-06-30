@@ -73,10 +73,11 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   };
 
   const openTimeEditModal = (empIndex: number, dayIndex: number) => {
-    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${employeeRecords[empIndex].days[dayIndex].date}`);
+    const date = employeeRecords[empIndex].days[dayIndex].date;
+    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${date}`);
     setSelectedEmployee(empIndex);
     setSelectedDay(dayIndex);
-    setSelectedDate(employeeRecords[empIndex].days[dayIndex].date);
+    setSelectedDate(date);
     setTimeEditModalOpen(true);
   };
 
