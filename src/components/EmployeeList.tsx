@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Clock, PenSquare, TrendingUp, FileSpreadsheet } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, PENALTY_OPTIONS } from '../types';
@@ -136,8 +136,8 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     }
   };
 
-  // Check if day is valid for approval (has check-in and check-out times or is a leave/off-day)
-  const canApproveDay = (day: DailyRecord) => {
+  // Helper function to check if a day can be approved
+  const canApproveDay = (day: DailyRecord): boolean => {
     // OFF-DAY and leave records can always be approved regardless of timestamp values
     if (day.notes === 'OFF-DAY' || 
         (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave'))) {
