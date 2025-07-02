@@ -25,7 +25,7 @@ import ManualEntryModal from '../components/ManualEntryModal';
 import UserCredentialsModal from '../components/UserCredentialsModal';
 import EmployeeShiftRequest from '../components/EmployeeShiftRequest';
 import ApproveAllConfirmationDialog from '../components/ApproveAllConfirmationDialog';
-import ConfirmDialog from './ConfirmDialog';
+import ConfirmDialog from '../components/ConfirmDialog';
 import DateRangePicker from '../components/DateRangePicker';
 
 // Import context
