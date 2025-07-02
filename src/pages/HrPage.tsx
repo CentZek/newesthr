@@ -25,7 +25,7 @@ import ManualEntryModal from '../components/ManualEntryModal';
 import UserCredentialsModal from '../components/UserCredentialsModal';
 import EmployeeShiftRequest from '../components/EmployeeShiftRequest';
 import ApproveAllConfirmationDialog from '../components/ApproveAllConfirmationDialog';
-import ConfirmDialog from '../components/ConfirmDialog';
+import ConfirmDialog from './ConfirmDialog';
 import DateRangePicker from '../components/DateRangePicker';
 
 // Import context
@@ -571,7 +571,8 @@ function HrPage() {
       penaltyMinutes: 0,
       displayCheckIn: DISPLAY_SHIFT_TIMES[shiftData.shiftType].startTime,
       displayCheckOut: DISPLAY_SHIFT_TIMES[shiftData.shiftType].endTime,
-      working_week_start: shiftData.date // Set working_week_start for proper grouping
+      working_week_start: shiftData.date, // Set working_week_start for proper grouping
+      recordId: `${employeeData.employee_number || employeeData.employeeNumber}-${shiftData.date}`
     };
     
     // Look for existing employee in records
@@ -654,6 +655,13 @@ function HrPage() {
         updatedRecords[employeeIndex].days.sort((a, b) => 
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
+        
+        // Add recordId to the new entries if not present
+        updatedRecords[employeeIndex].days.forEach(day => {
+          if (!day.recordId) {
+            day.recordId = `${updatedRecords[employeeIndex].employeeNumber}-${day.date}`;
+          }
+        });
       }
       
       // Update state with the modified records

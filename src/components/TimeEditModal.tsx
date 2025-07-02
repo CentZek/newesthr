@@ -213,7 +213,6 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
     }
 
     if (!hasError) {
-      // Pass along the recordId to ensure we're editing the correct record
       onSave(checkIn, checkOut, null, recordType === 'offday' ? 'OFF-DAY' : (recordType === 'leave' ? leaveType : ''));
     }
   };
@@ -252,11 +251,6 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
                 <p className="font-medium">{day.hoursWorked.toFixed(2)}</p>
               </div>
             </div>
-            {day.recordId && (
-              <div className="mt-2 text-xs text-gray-500">
-                Record ID: {day.recordId}
-              </div>
-            )}
           </div>
           
           {/* Corrected records info */}

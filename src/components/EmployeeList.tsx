@@ -76,9 +76,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     // Store the date for this record to ensure consistent selection
     const date = employeeRecords[empIndex].days[dayIndex].date;
     
-    // Add a record ID if not present (use a combination of employee, date, and random value)
+    // Add a stable record ID if not present (use a combination of employee number and date)
     if (!employeeRecords[empIndex].days[dayIndex].recordId) {
-      employeeRecords[empIndex].days[dayIndex].recordId = `${employeeRecords[empIndex].employeeNumber}-${date}-${Math.random().toString(36).substring(2, 9)}`;
+      employeeRecords[empIndex].days[dayIndex].recordId = `${employeeRecords[empIndex].employeeNumber}-${date}`;
     }
     
     console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${date}, recordId: ${employeeRecords[empIndex].days[dayIndex].recordId}`);
@@ -267,6 +267,11 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     const hasRawData = day.allTimeRecords && day.allTimeRecords.length > 0;
     const isRawDataExpanded = expandedRawData?.empIndex === empIndex && expandedRawData?.dayIndex === dayIndex;
     
+    // Generate a stable record ID if it doesn't exist yet
+    if (!day.recordId) {
+      day.recordId = `${employee.employeeNumber}-${day.date}`;
+    }
+    
     // MODIFIED: Prioritize display values for manual entries and employee-submitted shifts
     let checkInDisplay = '';
     let checkOutDisplay = '';
@@ -315,9 +320,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <div>
             <div className="font-bold text-gray-800 text-wrap-balance text-lg">
               {format(new Date(day.date), 'MM/dd/yyyy')}
-              {day.recordId && (
-                <span className="ml-1 text-xs text-gray-400">({day.recordId.split('-').pop()})</span>
-              )}
               {isManualEntry && <span className="ml-1 text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">Manual</span>}
               {wasCorrected && <span className="ml-1 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full" title="Original C/In or C/Out was corrected">Fixed</span>}
               {isOffDay && <span className="ml-1 text-xs px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded-full">OFF-DAY</span>}
@@ -481,6 +483,11 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                   {sortedDays.map((day, dayIndex) => {
                     if (showApproved && !day.approved) return null;
                     
+                    // Generate a stable record ID if it doesn't exist yet
+                    if (!day.recordId) {
+                      day.recordId = `${employee.employeeNumber}-${day.date}`;
+                    }
+                    
                     const hasMissingRecords = day.missingCheckIn || day.missingCheckOut;
                     const isManualEntry = day.notes === 'Manual entry' || day.notes?.includes('Manual entry') || day.notes?.includes('Employee submitted');
                     const isOffDay = day.notes === 'OFF-DAY' || day.shiftType === 'off_day';
@@ -491,11 +498,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                     const isLateNightCheckIn = day.shiftType === 'night' && day.firstCheckIn && isLateNightShiftCheckIn(day.firstCheckIn, day.shiftType);
                     const hasRawData = day.allTimeRecords && day.allTimeRecords.length > 0;
                     const isRawDataExpanded = expandedRawData?.empIndex === empIndex && expandedRawData?.dayIndex === dayIndex;
-                    
-                    // Generate a record ID if it doesn't exist yet
-                    if (!day.recordId) {
-                      day.recordId = `${employee.employeeNumber}-${day.date}-${Math.random().toString(36).substring(2, 9)}`;
-                    }
                     
                     // MODIFIED: Prioritize display values for manual entries
                     let checkInDisplay = '';
@@ -548,9 +550,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                         >
                           <div className="text-gray-900 font-bold">
                             {format(new Date(day.date), 'MM/dd/yyyy')}
-                            {day.recordId && (
-                              <span className="ml-1 text-xs text-gray-400">({day.recordId.split('-').pop()})</span>
-                            )}
                             {isManualEntry && <span className="ml-1 text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">Manual</span>}
                             {wasCorrected && <span className="ml-1 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full" title="Original C/In or C/Out was corrected">Fixed</span>}
                             {isOffDay && <span className="ml-1 text-xs px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded-full">OFF-DAY</span>}
