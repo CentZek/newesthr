@@ -73,8 +73,16 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   };
 
   const openTimeEditModal = (empIndex: number, dayIndex: number) => {
+    // Store the date for this record to ensure consistent selection
     const date = employeeRecords[empIndex].days[dayIndex].date;
-    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${date}`);
+    
+    // Add a record ID if not present (use a combination of employee, date, and random value)
+    if (!employeeRecords[empIndex].days[dayIndex].recordId) {
+      employeeRecords[empIndex].days[dayIndex].recordId = `${employeeRecords[empIndex].employeeNumber}-${date}-${Math.random().toString(36).substring(2, 9)}`;
+    }
+    
+    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${date}, recordId: ${employeeRecords[empIndex].days[dayIndex].recordId}`);
+    
     setSelectedEmployee(empIndex);
     setSelectedDay(dayIndex);
     setSelectedDate(date);
@@ -307,6 +315,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <div>
             <div className="font-bold text-gray-800 text-wrap-balance text-lg">
               {format(new Date(day.date), 'MM/dd/yyyy')}
+              {day.recordId && (
+                <span className="ml-1 text-xs text-gray-400">({day.recordId.split('-').pop()})</span>
+              )}
               {isManualEntry && <span className="ml-1 text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">Manual</span>}
               {wasCorrected && <span className="ml-1 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full" title="Original C/In or C/Out was corrected">Fixed</span>}
               {isOffDay && <span className="ml-1 text-xs px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded-full">OFF-DAY</span>}
@@ -481,6 +492,11 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                     const hasRawData = day.allTimeRecords && day.allTimeRecords.length > 0;
                     const isRawDataExpanded = expandedRawData?.empIndex === empIndex && expandedRawData?.dayIndex === dayIndex;
                     
+                    // Generate a record ID if it doesn't exist yet
+                    if (!day.recordId) {
+                      day.recordId = `${employee.employeeNumber}-${day.date}-${Math.random().toString(36).substring(2, 9)}`;
+                    }
+                    
                     // MODIFIED: Prioritize display values for manual entries
                     let checkInDisplay = '';
                     let checkOutDisplay = '';
@@ -532,6 +548,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                         >
                           <div className="text-gray-900 font-bold">
                             {format(new Date(day.date), 'MM/dd/yyyy')}
+                            {day.recordId && (
+                              <span className="ml-1 text-xs text-gray-400">({day.recordId.split('-').pop()})</span>
+                            )}
                             {isManualEntry && <span className="ml-1 text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">Manual</span>}
                             {wasCorrected && <span className="ml-1 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full" title="Original C/In or C/Out was corrected">Fixed</span>}
                             {isOffDay && <span className="ml-1 text-xs px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded-full">OFF-DAY</span>}
@@ -609,6 +628,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <button 
                               onClick={() => openTimeEditModal(empIndex, dayIndex)} 
                               data-date={day.date}
+                              data-recordid={day.recordId}
                               className={`p-1 rounded-full ${hasMissingRecords || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`} 
                               title={wasCorrected ? "Edit time (Fixed records)" : "Edit Time"}
                             >

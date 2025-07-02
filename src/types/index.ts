@@ -14,6 +14,7 @@ export interface TimeRecord {
   isCrossDay?: boolean;         // Flag to indicate this record is part of a cross-day shift
   fromPrevDay?: boolean;        // Flag for records that belong to the previous day's shift
   prevDayDate?: string;         // The date of the previous day for cross-day shifts
+  id?: string;                  // Unique identifier for the record
 }
 
 export interface DailyRecord {
@@ -51,6 +52,9 @@ export interface DailyRecord {
   
   // Working week start date (for proper grouping of night shifts)
   working_week_start?: string;
+  
+  // Unique identifier for this record
+  recordId?: string;
 }
 
 export interface EmployeeRecord {
