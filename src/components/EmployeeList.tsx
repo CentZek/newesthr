@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { format } from 'date-fns';
+import { format, differenceInMinutes, differenceInHours, addDays, subDays, getDay, getHours, getMinutes, isSameDay } from 'date-fns';
 import { AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Clock, PenSquare, TrendingUp, FileSpreadsheet } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, PENALTY_OPTIONS } from '../types';
 import PenaltyModal from './PenaltyModal';
