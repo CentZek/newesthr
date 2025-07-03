@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, differenceInMinutes, differenceInHours, addDays, subDays, getDay, getHours, getMinutes, isSameDay } from 'date-fns';
 import { AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Clock, PenSquare, TrendingUp, FileSpreadsheet } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, PENALTY_OPTIONS } from '../types';
@@ -585,14 +585,14 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                 <span className="ml-1 text-xs bg-yellow-100 text-yellow-800 px-1 rounded">
                                   {day.firstCheckIn.getHours() === 7 ? '07:00' : '08:00'}
                                 </span>}</> : 
-                              (isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>))}
+                              (isOffDay ? day.notes : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>))}
                           </div>
                           <div className={`flex items-center ${day.missingCheckOut ? 'text-red-500' : day.earlyLeave ? 'text-amber-600' : day.excessiveOvertime ? 'text-blue-600' : 'text-gray-700'} font-bold`}>
                             {day.lastCheckOut ? 
                               <>{day.earlyLeave && <AlertTriangle className="w-4 h-4 mr-1 text-amber-500" />}
                               {day.excessiveOvertime && <Clock className="w-4 h-4 mr-1 text-blue-500" />}
                               {checkOutDisplay}</> : 
-                              (isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>))}
+                              (isOffDay ? day.notes : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>))}
                           </div>
                           <div className="font-bold text-gray-900">{isOffDay ? '0.00' : isLeaveDay ? '9.00' : day.hoursWorked.toFixed(2)}</div>
                           <div><span className={`px-2 py-1 text-xs font-medium rounded-full ${shiftDisplay.color}`}>{shiftDisplay.name}</span></div>

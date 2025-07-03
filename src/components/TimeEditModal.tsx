@@ -11,7 +11,12 @@ interface TimeEditModalProps {
   onSave: (checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => void;
 }
 
-const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, onSave }) => {
+const TimeEditModal: React.FC<TimeEditModalProps> = ({ 
+  employee, 
+  day, 
+  onClose, 
+  onSave
+}) => {
   console.log(`TimeEditModal rendered with date: ${day.date}, recordId: ${day.recordId || 'unknown'}`);
   
   const [checkInTime, setCheckInTime] = useState<string>(

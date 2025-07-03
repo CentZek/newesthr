@@ -250,33 +250,16 @@ function HrPage() {
         day.lastCheckOut = null;
         day.missingCheckIn = true;
         day.missingCheckOut = true;
-        
-        // For OFF-DAY records
-        if (notes === 'OFF-DAY') {
-          day.hoursWorked = 0;
-          day.notes = 'OFF-DAY';
-          day.shiftType = 'off_day';
-          day.isLate = false;
-          day.earlyLeave = false;
-          day.excessiveOvertime = false;
-          day.penaltyMinutes = 0;
-          // Update display values
-          day.displayCheckIn = 'OFF-DAY';
-          day.displayCheckOut = 'OFF-DAY';
-        } 
-        // For leave type records
-        else if (isLeaveRequest) {
-          day.hoursWorked = 9.0; // Leave days get 9 hours
-          day.notes = notes;
-          day.shiftType = 'off_day'; // Use off_day type for leaves too
-          day.isLate = false;
-          day.earlyLeave = false;
-          day.excessiveOvertime = false;
-          day.penaltyMinutes = 0;
-          // Update display values
-          day.displayCheckIn = notes;
-          day.displayCheckOut = notes;
-        }
+        day.hoursWorked = isLeaveRequest ? 9.0 : 0.0;
+        day.notes = notes || 'OFF-DAY';
+        day.shiftType = isLeaveRequest ? 'off_day' : 'off_day';
+        day.isLate = false;
+        day.earlyLeave = false;
+        day.excessiveOvertime = false;
+        day.penaltyMinutes = 0;
+        // Update display values
+        day.displayCheckIn = isLeaveRequest ? notes : 'OFF-DAY';
+        day.displayCheckOut = isLeaveRequest ? notes : 'OFF-DAY';
         
         return newRecords;
       }
