@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format, parse, addDays } from 'date-fns';
 import { X, Clock, AlertCircle, Info, RefreshCw, Repeat, Briefcase } from 'lucide-react';
-import { EmployeeRecord, DailyRecord, DISPLAY_SHIFT_TIMES, LATE_THRESHOLDS } from '../types';
+import { EmployeeRecord, DailyRecord, DISPLAY_SHIFT_TIMES } from '../types';
 import { formatTimeWith24Hour } from '../utils/dateTimeHelper';
+import { isLateCheckIn } from '../utils/shiftCalculations';
 
 interface TimeEditModalProps {
   employee: EmployeeRecord;
@@ -11,7 +12,14 @@ interface TimeEditModalProps {
   onSave: (checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => void;
 }
 
-const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, onSave }) => {
+const TimeEditModal: React.FC<TimeEditModalProps> = ({ 
+  employee, 
+  day, 
+  onClose, 
+  onSave
+}) => {
+  console.log(`TimeEditModal rendered with date: ${day.date}, recordId: ${day.recordId || 'unknown'}`);
+  
   const [checkInTime, setCheckInTime] = useState<string>(
     day.firstCheckIn ? format(day.firstCheckIn, 'HH:mm') : ''
   );
@@ -24,18 +32,44 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
   const [leaveType, setLeaveType] = useState<string>(day.notes === 'OFF-DAY' ? '' : day.notes || '');
   const [recordType, setRecordType] = useState<'edit' | 'offday' | 'leave'>('edit');
   
+  // Reset all state when day changes to ensure the modal always shows the correct data
   useEffect(() => {
-    // Set initial record type based on day.notes
+    console.log(`Day data changed in TimeEditModal: date=${day.date}, shiftType=${day.shiftType}, recordId=${day.recordId || 'unknown'}`);
+    
+    // Reset form state based on new day data
+    if (day.firstCheckIn) {
+      setCheckInTime(format(day.firstCheckIn, 'HH:mm'));
+    } else {
+      setCheckInTime('');
+    }
+    
+    if (day.lastCheckOut) {
+      setCheckOutTime(format(day.lastCheckOut, 'HH:mm'));
+    } else {
+      setCheckOutTime('');
+    }
+    
+    // Set record type based on day.notes
     if (day.notes === 'OFF-DAY') {
       setRecordType('offday');
     } else if (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave')) {
       setRecordType('leave');
+      setLeaveType(day.notes);
     } else {
       setRecordType('edit');
     }
-  }, [day.notes]);
+    
+    // Reset error states
+    setCheckInError('');
+    setCheckOutError('');
+    
+    // Reset correction info
+    setShowCorrectionInfo(!!day.correctedRecords);
+    
+  }, [day]);
 
-  const dateStr = format(new Date(day.date), 'yyyy-MM-dd');
+  // Get date string for the selected day - use the raw date string to avoid timezone issues
+  const dateStr = day.date;
   
   // Leave type options
   const leaveTypes = [
@@ -44,7 +78,8 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
     { value: 'marriage-leave', label: 'Marriage Leave' },
     { value: 'bereavement-leave', label: 'Bereavement Leave' },
     { value: 'maternity-leave', label: 'Maternity Leave' },
-    { value: 'paternity-leave', label: 'Paternity Leave' }
+    { value: 'paternity-leave', label: 'Paternity Leave' },
+    { value: 'annual-leave', label: 'Annual Leave' }
   ];
   
   // Determine if this might be a night shift based on check-in time
@@ -62,63 +97,49 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
     return false;
   };
 
-  // Determine if this is a canteen shift
+  // Check if the employee has evening shift patterns
   const isCanteenShift = () => {
     return day.shiftType === 'canteen';
   };
   
-  // Check if time falls within 7AM canteen hours
+  // Check if time falls within a morning shift time range
   const is7AMCanteenHours = (timeStr: string): boolean => {
     if (!timeStr) return false;
     
     try {
       const hour = parseInt(timeStr.split(':')[0], 10);
+      const minute = parseInt(timeStr.split(':')[1], 10);
       
       // 07:00 is standard early canteen staff start time
-      return hour === 7;
+      return (hour === 7);
     } catch (error) {
       return false;
     }
   };
   
-  // Check if time falls within 8AM canteen hours
+  // Check if time falls within a morning shift time range
   const is8AMCanteenHours = (timeStr: string): boolean => {
     if (!timeStr) return false;
     
     try {
       const hour = parseInt(timeStr.split(':')[0], 10);
+      const minute = parseInt(timeStr.split(':')[1], 10);
       
       // 08:00 is standard late canteen staff start time
-      return hour === 8;
+      return (hour === 8);
     } catch (error) {
       return false;
     }
   };
-  
-  // Check if this time would be considered late based on shift type
-  const isLateForShift = (timeStr: string): boolean => {
-    if (!timeStr || !day.shiftType) return false;
+
+  // Helper to convert check-in time string to Date object for isLateCheckIn validation
+  const getCheckInDateForValidation = (): Date | null => {
+    if (!checkInTime) return null;
     
     try {
-      const hour = parseInt(timeStr.split(':')[0], 10);
-      const minute = parseInt(timeStr.split(':')[1], 10);
-      
-      if (day.shiftType === 'canteen') {
-        // For early canteen shift (07:00 start) 
-        if (hour === 7) {
-          return minute > LATE_THRESHOLDS.canteen;
-        }
-        // For late canteen shift (08:00 start)
-        else if (hour === 8) {
-          return minute > LATE_THRESHOLDS.canteen;
-        }
-        // If not at the exact starting hour, it's late
-        return (hour > 8 || (hour < 7));
-      }
-      
-      return false;
+      return parse(`${dateStr} ${checkInTime}`, 'yyyy-MM-dd HH:mm', new Date());
     } catch (error) {
-      return false;
+      return null;
     }
   };
 
@@ -151,9 +172,9 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
     setCheckInError('');
     setCheckOutError('');
     
-    // If marked as OFF-DAY or leave day, and both times are empty
-    if ((recordType === 'offday' || recordType === 'leave') && !checkInTime.trim() && !checkOutTime.trim()) {
-      // Set to OFF-DAY or leave type by passing null for both values
+    // If marked as OFF-DAY or leave day
+    if (recordType === 'offday' || recordType === 'leave') {
+      // Set to OFF-DAY or leave type by passing null for both check-in and check-out
       onSave(null, null, null, recordType === 'offday' ? 'OFF-DAY' : leaveType);
       return;
     }
@@ -246,6 +267,11 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
                 <p className="text-gray-500">Current Hours</p>
                 <p className="font-medium">{day.hoursWorked.toFixed(2)}</p>
               </div>
+              {day.recordId && (
+                <div className="col-span-2 text-xs text-gray-400">
+                  <p>Record ID: {day.recordId}</p>
+                </div>
+              )}
             </div>
           </div>
           
@@ -328,9 +354,9 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
               <p className="text-sm text-blue-700">
                 <span className="font-medium">
                   {recordType === 'offday' 
-                    ? 'This will be marked as an OFF-DAY'
+                    ? 'This will be marked as an OFF-DAY (unpaid, 0 hours)'
                     : recordType === 'leave' 
-                      ? `This will be marked as ${leaveTypes.find(t => t.value === leaveType)?.label || leaveType}` 
+                      ? `This will be marked as ${leaveTypes.find(t => t.value === leaveType)?.label || leaveType} (paid, 9 hours)` 
                       : 'Edit check-in and check-out times'}
                 </span>
               </p>
@@ -366,11 +392,14 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
                   {checkInTime && recordType === 'edit' && (
                     <>
                       <span>You entered: {formatTimeWithAmPm(checkInTime)}</span>
-                      {isLateForShift(checkInTime) && (
-                        <span className="ml-2 text-amber-600 font-medium">
-                          (Will be flagged as late)
-                        </span>
-                      )}
+                      {(() => {
+                        const checkInDate = getCheckInDateForValidation();
+                        return checkInDate && isLateCheckIn(checkInDate, day.shiftType) && (
+                          <span className="ml-2 text-amber-600 font-medium">
+                            (Will be flagged as late)
+                          </span>
+                        );
+                      })()}
                       {is7AMCanteenHours(checkInTime) && day.shiftType !== 'canteen' && (
                         <span className="ml-2 text-blue-600 font-medium">
                           (Matches canteen 07:00 shift)
