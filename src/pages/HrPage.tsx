@@ -74,9 +74,6 @@ function HrPage() {
   
   // Reset confirmation dialog state
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-  
-  // Add a save in progress flag to prevent multiple saves
-  const [saveInProgress, setSaveInProgress] = useState(false);
 
   // Check if screen is mobile
   useEffect(() => {
@@ -415,12 +412,6 @@ function HrPage() {
       return;
     }
     
-    // Prevent multiple simultaneous saves
-    if (isSaving || saveInProgress) {
-      console.log('Save operation already in progress, ignoring this request');
-      return;
-    }
-    
     // Check connection first
     const isConnected = await checkConnection();
     if (!isConnected) {
@@ -429,7 +420,6 @@ function HrPage() {
     
     let approvedCount = 0;
     setSavingErrors([]);
-    setSaveInProgress(true);
     
     // Count total approved records
     employeeRecords.forEach(emp => {
@@ -440,7 +430,6 @@ function HrPage() {
     
     if (approvedCount === 0) {
       toast.error('No approved records to save');
-      setSaveInProgress(false);
       return;
     }
     
@@ -500,10 +489,6 @@ function HrPage() {
       toast.error(error instanceof Error ? error.message : 'Error saving records');
     } finally {
       setIsSaving(false);
-      // Add a small delay before allowing another save operation
-      setTimeout(() => {
-        setSaveInProgress(false);
-      }, 2000);
     }
   };
 
@@ -1023,10 +1008,10 @@ function HrPage() {
                     {/* Third row (full-width Save button on mobile) */}
                     <button
                       onClick={handleSaveToDatabase}
-                      disabled={isSaving || saveInProgress || !employeeRecords.some(emp => emp.days.some(d => d.approved)) || !!connectionError || isResetting}
+                      disabled={isSaving || !employeeRecords.some(emp => emp.days.some(d => d.approved)) || !!connectionError || isResetting}
                       className="col-span-2 sm:col-span-1 inline-flex items-center justify-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isSaving || saveInProgress ? (
+                      {isSaving ? (
                         <>
                           <span className="inline-block h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin mr-2"></span>
                           {isMobile ? 'Saving...' : 'Saving Approved Records...'}

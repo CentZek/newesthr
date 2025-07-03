@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { format, differenceInMinutes, differenceInHours, addDays, subDays, getDay, getHours, getMinutes, isSameDay } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Clock, PenSquare, TrendingUp, FileSpreadsheet } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, PENALTY_OPTIONS } from '../types';
 import PenaltyModal from './PenaltyModal';
@@ -73,11 +73,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   };
 
   const openTimeEditModal = (empIndex: number, dayIndex: number) => {
-    const date = employeeRecords[empIndex].days[dayIndex].date;
-    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${date}`);
+    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${employeeRecords[empIndex].days[dayIndex].date}`);
     setSelectedEmployee(empIndex);
     setSelectedDay(dayIndex);
-    setSelectedDate(date);
+    setSelectedDate(employeeRecords[empIndex].days[dayIndex].date);
     setTimeEditModalOpen(true);
   };
 
@@ -137,8 +136,8 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     }
   };
 
-  // Helper function to check if a day can be approved
-  const canApproveDay = (day: DailyRecord): boolean => {
+  // Check if day is valid for approval (has check-in and check-out times or is a leave/off-day)
+  const canApproveDay = (day: DailyRecord) => {
     // OFF-DAY and leave records can always be approved regardless of timestamp values
     if (day.notes === 'OFF-DAY' || 
         (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave'))) {
