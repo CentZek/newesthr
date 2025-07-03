@@ -339,7 +339,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <button 
               onClick={() => openTimeEditModal(empIndex, dayIndex)} 
               data-date={day.date}
-              data-recordid={day.recordId}
               className={`p-1 rounded-full ${day.missingCheckIn || day.missingCheckOut || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`}
             >
               <PenSquare className="w-5 h-5" />

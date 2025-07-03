@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { format } from 'date-fns';
+import { format, parse, addDays } from 'date-fns';
 import { X, Clock, AlertCircle, Info, RefreshCw, Repeat, Briefcase } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, DISPLAY_SHIFT_TIMES } from '../types';
 import { formatTimeWith24Hour } from '../utils/dateTimeHelper';
@@ -505,42 +505,5 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
     </div>
   );
 };
-
-// Helper function to check if a time would be considered late based on shift type
-const isLateForShift = (timeStr: string): boolean => {
-  if (!timeStr) return false;
-  
-  try {
-    const hour = parseInt(timeStr.split(':')[0], 10);
-    const minute = parseInt(timeStr.split(':')[1], 10);
-    
-    // For canteen shifts
-    if (hour === 7) {
-      return minute > 10; // More than 10 minutes late for 7AM start
-    } else if (hour === 8) {
-      return minute > 10; // More than 10 minutes late for 8AM start
-    }
-    
-    return false;
-  } catch (error) {
-    return false;
-  }
-};
-
-// Helper function for date parsing
-function parse(dateString: string, formatString: string, referenceDate: Date): Date {
-  const [datePart, timePart] = dateString.split(' ');
-  const [year, month, day] = datePart.split('-').map(Number);
-  const [hour, minute] = timePart.split(':').map(Number);
-  
-  return new Date(year, month - 1, day, hour, minute);
-}
-
-// Helper function to add days to a date
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
 
 export default TimeEditModal;
