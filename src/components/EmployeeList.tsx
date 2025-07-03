@@ -339,6 +339,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <button 
               onClick={() => openTimeEditModal(empIndex, dayIndex)} 
               data-date={day.date}
+              data-recordid={day.recordId}
               className={`p-1 rounded-full ${day.missingCheckIn || day.missingCheckOut || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`}
             >
               <PenSquare className="w-5 h-5" />
@@ -398,7 +399,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                 <>{(day.isLate || isLateNightCheckIn) && <AlertTriangle className="inline w-3 h-3 mr-1 text-amber-500" />}
                 {checkInDisplay}
                 {day.shiftType === 'canteen' && <span className="ml-1 text-xs bg-yellow-100 text-yellow-800 px-1 rounded">{day.firstCheckIn.getHours() === 7 ? '07:00' : '08:00'}</span>}</> : 
-                isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : checkInDisplay)}
+                isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>)}
             </div>
           </div>
           <div>
@@ -408,7 +409,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                 <>{day.earlyLeave && <AlertTriangle className="inline w-3 h-3 mr-1 text-amber-500" />}
                 {day.excessiveOvertime && <Clock className="inline w-3 h-3 mr-1 text-blue-500" />}
                 {checkOutDisplay}</> : 
-                isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : checkOutDisplay)}
+                isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>)}
             </div>
           </div>
         </div>
@@ -584,14 +585,14 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                 <span className="ml-1 text-xs bg-yellow-100 text-yellow-800 px-1 rounded">
                                   {day.firstCheckIn.getHours() === 7 ? '07:00' : '08:00'}
                                 </span>}</> : 
-                              (isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : checkInDisplay))}
+                              (isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>))}
                           </div>
                           <div className={`flex items-center ${day.missingCheckOut ? 'text-red-500' : day.earlyLeave ? 'text-amber-600' : day.excessiveOvertime ? 'text-blue-600' : 'text-gray-700'} font-bold`}>
                             {day.lastCheckOut ? 
                               <>{day.earlyLeave && <AlertTriangle className="w-4 h-4 mr-1 text-amber-500" />}
                               {day.excessiveOvertime && <Clock className="w-4 h-4 mr-1 text-blue-500" />}
                               {checkOutDisplay}</> : 
-                              (isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : checkOutDisplay))}
+                              (isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>))}
                           </div>
                           <div className="font-bold text-gray-900">
                             {isOffDay ? '0.00' : isLeaveDay ? '9.00' : day.hoursWorked.toFixed(2)}

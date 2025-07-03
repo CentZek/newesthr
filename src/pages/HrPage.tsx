@@ -566,7 +566,7 @@ function HrPage() {
       lastCheckOut: shiftData.checkOutDate,
       hoursWorked: shiftData.hoursWorked || 9.0, // Use provided hours or default to standard shift
       approved: false, // Not auto-approved
-      shiftType: shiftData.shiftType,
+      shiftType: shiftData.shift_type,
       notes: 'Employee submitted shift - HR approved',
       missingCheckIn: false,
       missingCheckOut: false,
@@ -574,8 +574,8 @@ function HrPage() {
       earlyLeave: false,
       excessiveOvertime: shiftData.hoursWorked > 9.5,
       penaltyMinutes: 0,
-      displayCheckIn: DISPLAY_SHIFT_TIMES[shiftData.shiftType].startTime,
-      displayCheckOut: DISPLAY_SHIFT_TIMES[shiftData.shiftType].endTime,
+      displayCheckIn: DISPLAY_SHIFT_TIMES[shiftData.shift_type].startTime,
+      displayCheckOut: DISPLAY_SHIFT_TIMES[shiftData.shift_type].endTime,
       working_week_start: shiftData.date, // Set working_week_start for proper grouping
       recordId: `${employeeData.employee_number || employeeData.employeeNumber}-${shiftData.date}`
     };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { X, Clock, AlertCircle, Info, RefreshCw, Repeat, Briefcase } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, DISPLAY_SHIFT_TIMES } from '../types';
@@ -250,6 +250,11 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
                 <p className="text-gray-500">Current Hours</p>
                 <p className="font-medium">{day.hoursWorked.toFixed(2)}</p>
               </div>
+              {day.recordId && (
+                <div className="col-span-2 text-xs text-gray-400">
+                  <p>Record ID: {day.recordId}</p>
+                </div>
+              )}
             </div>
           </div>
           
