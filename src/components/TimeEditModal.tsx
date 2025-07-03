@@ -3,6 +3,7 @@ import { format, parse, addDays } from 'date-fns';
 import { X, Clock, AlertCircle, Info, RefreshCw, Repeat, Briefcase } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, DISPLAY_SHIFT_TIMES } from '../types';
 import { formatTimeWith24Hour } from '../utils/dateTimeHelper';
+import { isLateCheckIn } from '../utils/shiftCalculations';
 
 interface TimeEditModalProps {
   employee: EmployeeRecord;
@@ -380,7 +381,7 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
                   {checkInTime && recordType === 'edit' && (
                     <>
                       <span>You entered: {formatTimeWithAmPm(checkInTime)}</span>
-                      {isLateForShift(checkInTime) && (
+                      {isLateCheckIn(checkInTime, day.shiftType) && (
                         <span className="ml-2 text-amber-600 font-medium">
                           (Will be flagged as late)
                         </span>
