@@ -501,7 +501,6 @@ export const checkExistingTimeRecord = async (
       .select('id')
       .eq('employee_id', employeeId)
       .eq('status', status) // IMPORTANT: Filter by status to prevent mix-ups
-      .eq('shift_type', shiftType)
       .eq('working_week_start', workingWeekStart)
       .eq('is_manual_entry', true)
       .maybeSingle();
@@ -645,6 +644,7 @@ export const fetchManualTimeRecords = async (limit: number = 50): Promise<any[]>
         )
       `)
       .eq('is_manual_entry', true)
+      .not('status', 'eq', 'off_day')  // Exclude off-day records
       .order('timestamp', { ascending: false })
       .limit(limit);
     

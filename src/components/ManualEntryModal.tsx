@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, addDays, differenceInDays, parseISO, isValid, eachDayOfInterval } from 'date-fns';
-import { X, Clock, User, Calendar, Check, AlertCircle, Info, RefreshCw, Repeat, Briefcase } from 'lucide-react';
+import { X, Clock, User, Calendar, Check, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { SHIFT_TIMES, DISPLAY_SHIFT_TIMES } from '../types';
@@ -344,7 +344,7 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
           working_week_start: date,
           display_check_in: 'OFF-DAY',
           display_check_out: 'OFF-DAY',
-          approved: false // Start as unapproved
+          approved: true
         };
 
         // Check if an OFF-DAY record already exists
@@ -369,7 +369,7 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
           working_week_start: date,
           display_check_in: leaveType,
           display_check_out: leaveType,
-          approved: false // Start as unapproved
+          approved: true
         };
 
         // Check if a leave record already exists
@@ -382,7 +382,8 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
 
         await safeUpsertTimeRecord(leaveData, existingLeaveId);
       } else {
-        // For normal shifts
+        // For normal shifts - do NOT create employee_shifts record for manual entries
+        // Manual entries go directly to time_records with approved status
         
         // Get standard times for selected shift
         const { startTime, endTime, checkOutDate } = getShiftTimes(shiftType, date);
@@ -416,7 +417,7 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
           display_check_in: displayCheckIn,
           display_check_out: displayCheckOut,
           exact_hours: 9.0,
-          approved: false // Start as unapproved
+          approved: true
         };
         
         // Prepare time records for check-out
@@ -433,7 +434,7 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
           display_check_in: displayCheckIn,
           display_check_out: displayCheckOut,
           exact_hours: 9.0,
-          approved: false // Start as unapproved
+          approved: true
         };
 
         // Check if records already exist and update or insert accordingly
