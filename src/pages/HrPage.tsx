@@ -233,7 +233,6 @@ function HrPage() {
     toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
   };
 
-  // Updated to use recordId for finding the day record
   const handleEditTime = (employeeIndex: number, dayIndex: number, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => {
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
@@ -241,7 +240,6 @@ function HrPage() {
       // Get the record information
       const employee = newRecords[employeeIndex];
       const day = employee.days[dayIndex];
-      const recordId = day.recordId;
       
       // If notes is provided and it's not "OFF-DAY", it's a leave request
       const isLeaveRequest = notes && notes !== 'OFF-DAY' && notes.includes('leave');

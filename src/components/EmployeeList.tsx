@@ -594,9 +594,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                               {checkOutDisplay}</> : 
                               (isOffDay ? 'OFF-DAY' : (isLeaveDay ? day.notes : <span className="text-red-500">Missing</span>))}
                           </div>
-                          <div className="font-bold text-gray-900">
-                            {isOffDay ? '0.00' : isLeaveDay ? '9.00' : day.hoursWorked.toFixed(2)}
-                          </div>
+                          <div className="font-bold text-gray-900">{isOffDay ? '0.00' : isLeaveDay ? '9.00' : day.hoursWorked.toFixed(2)}</div>
                           <div><span className={`px-2 py-1 text-xs font-medium rounded-full ${shiftDisplay.color}`}>{shiftDisplay.name}</span></div>
                           <div>
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${day.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
