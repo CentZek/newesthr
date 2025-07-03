@@ -44,8 +44,7 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
     { value: 'marriage-leave', label: 'Marriage Leave' },
     { value: 'bereavement-leave', label: 'Bereavement Leave' },
     { value: 'maternity-leave', label: 'Maternity Leave' },
-    { value: 'paternity-leave', label: 'Paternity Leave' },
-    { value: 'annual-leave', label: 'Annual Leave' }
+    { value: 'paternity-leave', label: 'Paternity Leave' }
   ];
   
   // Determine if this might be a night shift based on check-in time
