@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { format, parse, addDays } from 'date-fns';
+import { format, parse, addDays, isValid } from 'date-fns';
 import { X, Clock, AlertCircle, Info, RefreshCw, Repeat, Briefcase } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, DISPLAY_SHIFT_TIMES } from '../types';
 import { formatTimeWith24Hour } from '../utils/dateTimeHelper';
@@ -394,7 +394,7 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
                       <span>You entered: {formatTimeWithAmPm(checkInTime)}</span>
                       {(() => {
                         const checkInDate = getCheckInDateForValidation();
-                        return checkInDate && isLateCheckIn(checkInDate, day.shiftType) && (
+                        return checkInDate && isValid(checkInDate) && isLateCheckIn(checkInDate, day.shiftType) && (
                           <span className="ml-2 text-amber-600 font-medium">
                             (Will be flagged as late)
                           </span>
