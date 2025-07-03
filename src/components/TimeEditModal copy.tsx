@@ -24,39 +24,16 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
   const [leaveType, setLeaveType] = useState<string>(day.notes === 'OFF-DAY' ? '' : day.notes || '');
   const [recordType, setRecordType] = useState<'edit' | 'offday' | 'leave'>('edit');
   
-  // Reset all state when day changes to ensure the modal always shows the correct data
   useEffect(() => {
-    // Reset form state based on new day data
-    if (day.firstCheckIn) {
-      setCheckInTime(format(day.firstCheckIn, 'HH:mm'));
-    } else {
-      setCheckInTime('');
-    }
-    
-    if (day.lastCheckOut) {
-      setCheckOutTime(format(day.lastCheckOut, 'HH:mm'));
-    } else {
-      setCheckOutTime('');
-    }
-    
-    // Set record type based on day.notes
+    // Set initial record type based on day.notes
     if (day.notes === 'OFF-DAY') {
       setRecordType('offday');
     } else if (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave')) {
       setRecordType('leave');
-      setLeaveType(day.notes);
     } else {
       setRecordType('edit');
     }
-    
-    // Reset error states
-    setCheckInError('');
-    setCheckOutError('');
-    
-    // Reset correction info
-    setShowCorrectionInfo(!!day.correctedRecords);
-    
-  }, [day]);
+  }, [day.notes]);
 
   const dateStr = format(new Date(day.date), 'yyyy-MM-dd');
   
