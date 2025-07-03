@@ -132,6 +132,17 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
     }
   };
 
+  // Helper to convert check-in time string to Date object for isLateCheckIn validation
+  const getCheckInDateForValidation = (): Date | null => {
+    if (!checkInTime) return null;
+    
+    try {
+      return parse(`${dateStr} ${checkInTime}`, 'yyyy-MM-dd HH:mm', new Date());
+    } catch (error) {
+      return null;
+    }
+  };
+
   // Helper to convert 24-hour time to 12-hour format with AM/PM
   const formatTimeWithAmPm = (timeString: string): string => {
     if (!timeString) return '';
@@ -381,11 +392,14 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
                   {checkInTime && recordType === 'edit' && (
                     <>
                       <span>You entered: {formatTimeWithAmPm(checkInTime)}</span>
-                      {isLateCheckIn(checkInTime, day.shiftType) && (
-                        <span className="ml-2 text-amber-600 font-medium">
-                          (Will be flagged as late)
-                        </span>
-                      )}
+                      {(() => {
+                        const checkInDate = getCheckInDateForValidation();
+                        return checkInDate && isLateCheckIn(checkInDate, day.shiftType) && (
+                          <span className="ml-2 text-amber-600 font-medium">
+                            (Will be flagged as late)
+                          </span>
+                        );
+                      })()}
                       {is7AMCanteenHours(checkInTime) && day.shiftType !== 'canteen' && (
                         <span className="ml-2 text-blue-600 font-medium">
                           (Matches canteen 07:00 shift)
