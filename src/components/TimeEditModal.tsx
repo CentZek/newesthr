@@ -12,8 +12,6 @@ interface TimeEditModalProps {
 }
 
 const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, onSave }) => {
-  console.log(`TimeEditModal rendered with date: ${day.date}`);
-  
   const [checkInTime, setCheckInTime] = useState<string>(
     day.firstCheckIn ? format(day.firstCheckIn, 'HH:mm') : ''
   );
@@ -26,11 +24,18 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
   const [leaveType, setLeaveType] = useState<string>(day.notes === 'OFF-DAY' ? '' : day.notes || '');
   const [recordType, setRecordType] = useState<'edit' | 'offday' | 'leave'>('edit');
   
-  // Reset all state when day changes to ensure the modal always shows the correct data
+  // Reset state when day changes
   useEffect(() => {
-    console.log(`Day data changed in TimeEditModal: date=${day.date}, shiftType=${day.shiftType}`);
+    // Set initial record type based on day.notes
+    if (day.notes === 'OFF-DAY') {
+      setRecordType('offday');
+    } else if (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave')) {
+      setRecordType('leave');
+    } else {
+      setRecordType('edit');
+    }
     
-    // Reset form state based on new day data
+    // Reset time inputs whenever the day changes
     if (day.firstCheckIn) {
       setCheckInTime(format(day.firstCheckIn, 'HH:mm'));
     } else {
@@ -43,26 +48,18 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
       setCheckOutTime('');
     }
     
-    // Set record type based on day.notes
-    if (day.notes === 'OFF-DAY') {
-      setRecordType('offday');
-    } else if (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave')) {
-      setRecordType('leave');
-      setLeaveType(day.notes);
-    } else {
-      setRecordType('edit');
-    }
-    
     // Reset error states
     setCheckInError('');
     setCheckOutError('');
     
+    // Reset leave type
+    setLeaveType(day.notes === 'OFF-DAY' ? '' : day.notes || '');
+    
     // Reset correction info
     setShowCorrectionInfo(!!day.correctedRecords);
-    
   }, [day]);
 
-  // Get date string for the selected day - use the raw date string to avoid timezone issues
+  // Get date string for the selected day
   const dateStr = day.date;
   
   // Leave type options
