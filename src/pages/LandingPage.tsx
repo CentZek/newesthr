@@ -34,7 +34,7 @@ const LandingPage: React.FC = () => {
           {/* Three cards in a row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Operational Manager Card */}
-            <Link to="/operational-manager-login" className="bg-gradient-to-b from-[#1a237e] to-[#0d1452] rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+            <Link to="/operational-manager" className="bg-gradient-to-b from-[#1a237e] to-[#0d1452] rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
               <div className="p-6 flex flex-col items-center text-center text-white">
                 <div className="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center mb-4">
                   <Users className="w-6 h-6 text-white" />

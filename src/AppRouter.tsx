@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import LandingPage from './pages/LandingPage';
 import HrPage from './pages/HrPage';
 import HrLoginPage from './pages/HrLoginPage';
-import OperationalManagerLoginPage from './pages/OperationalManagerLoginPage';
 import ApprovedHoursPage from './pages/ApprovedHoursPage';
 import EmployeeLoginPage from './pages/EmployeeLoginPage';
 import EmployeeDashboardPage from './pages/EmployeeDashboardPage';
@@ -42,19 +41,6 @@ const HrProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children
   return children;
 };
 
-// Route guard for Operational Manager protected routes
-const OperationalManagerProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { isAuthenticated } = useHrAuth();
-  const location = useLocation();
-  
-  if (!isAuthenticated) {
-    // Using a simple component instead of Navigate
-    return <div className="hidden">Redirecting...</div>;
-  }
-  
-  return children;
-};
-
 const AppRouter: React.FC = () => {
   const { isAuthenticated } = useHrAuth();
   const location = useLocation();
@@ -66,18 +52,9 @@ const AppRouter: React.FC = () => {
       navigate('/hr-login', { replace: true });
     }
     
-    if (!isAuthenticated && (location.pathname === '/operational-manager')) {
-      navigate('/operational-manager-login', { replace: true });
-    }
-    
     // If user is authenticated and tries to access login page, redirect to HR
     if (isAuthenticated && location.pathname === '/hr-login') {
       navigate('/hr', { replace: true });
-    }
-    
-    // If user is authenticated and tries to access operational manager login, redirect to operational manager page
-    if (isAuthenticated && location.pathname === '/operational-manager-login') {
-      navigate('/operational-manager', { replace: true });
     }
   }, [isAuthenticated, location.pathname, navigate]);
   
@@ -85,7 +62,6 @@ const AppRouter: React.FC = () => {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/hr-login" element={<HrLoginPage />} />
-      <Route path="/operational-manager-login" element={<OperationalManagerLoginPage />} />
       <Route 
         path="/hr" 
         element={
@@ -120,14 +96,7 @@ const AppRouter: React.FC = () => {
           </EmployeeRoute>
         } 
       />
-      <Route 
-        path="/operational-manager" 
-        element={
-          <OperationalManagerProtectedRoute>
-            <OperationalManagerPage />
-          </OperationalManagerProtectedRoute>
-        } 
-      />
+      <Route path="/operational-manager" element={<OperationalManagerPage />} />
       {/* Handle unknown paths - render LandingPage instead of using Navigate */}
       <Route path="*" element={<LandingPage />} />
     </Routes>

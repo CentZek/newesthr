@@ -343,8 +343,7 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
           exact_hours: 0,
           working_week_start: date,
           display_check_in: 'OFF-DAY',
-          display_check_out: 'OFF-DAY',
-          approved: true
+          display_check_out: 'OFF-DAY'
         };
 
         // Check if an OFF-DAY record already exists
@@ -368,8 +367,7 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
           exact_hours: 9.0, // Leave days get 9 hours credit
           working_week_start: date,
           display_check_in: leaveType,
-          display_check_out: leaveType,
-          approved: true
+          display_check_out: leaveType
         };
 
         // Check if a leave record already exists
@@ -382,11 +380,23 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
 
         await safeUpsertTimeRecord(leaveData, existingLeaveId);
       } else {
-        // For normal shifts - do NOT create employee_shifts record for manual entries
-        // Manual entries go directly to time_records with approved status
-        
+        // For normal shifts
         // Get standard times for selected shift
         const { startTime, endTime, checkOutDate } = getShiftTimes(shiftType, date);
+
+        // Create employee shift first
+        await supabase
+          .from('employee_shifts')
+          .insert({
+            employee_id: employeeId,
+            date: date,
+            start_time: startTime,
+            end_time: endTime,
+            shift_type: shiftType,
+            status: 'confirmed', // Set to confirmed directly
+            notes: notes || 'Manual entry by HR',
+            working_week_start: date
+          });
 
         // Use our helper function to properly handle day rollover
         const { checkIn, checkOut } = parseShiftTimes(
@@ -416,8 +426,7 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
           working_week_start: date, // Set working_week_start for proper grouping
           display_check_in: displayCheckIn,
           display_check_out: displayCheckOut,
-          exact_hours: 9.0,
-          approved: true
+          exact_hours: 9.0
         };
         
         // Prepare time records for check-out
@@ -433,8 +442,7 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
             date,  // For other shifts, use current date
           display_check_in: displayCheckIn,
           display_check_out: displayCheckOut,
-          exact_hours: 9.0,
-          approved: true
+          exact_hours: 9.0
         };
 
         // Check if records already exist and update or insert accordingly

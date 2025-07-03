@@ -7,25 +7,17 @@ import toast, { Toaster } from 'react-hot-toast';
 import NavigationTabs from '../components/NavigationTabs';
 import LeaveBalanceTracking from '../components/OperationalManager/LeaveBalanceTracking';
 import LeaveTypeOverview from '../components/OperationalManager/LeaveTypeOverview';
-import { useHrAuth } from '../context/HrAuthContext';
 
 const OperationalManagerPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, username, logout } = useHrAuth();
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<Record<string, boolean>>({});
   const [activeView, setActiveView] = useState<'pending' | 'balance'>('pending');
   
   useEffect(() => {
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      navigate('/operational-manager-login', { replace: true });
-      return;
-    }
-    
     fetchLeaveRequests();
-  }, [isAuthenticated, navigate]);
+  }, []);
   
   const fetchLeaveRequests = async () => {
     setIsLoading(true);
@@ -112,12 +104,6 @@ const OperationalManagerPage: React.FC = () => {
     return type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  // Handle logout
-  const handleLogout = () => {
-    logout();
-    navigate('/operational-manager-login', { replace: true });
-  };
-
   const pendingLeaveRequests = leaveRequests.filter(request => request.status === 'pending');
 
   return (
@@ -130,15 +116,10 @@ const OperationalManagerPage: React.FC = () => {
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center">
-                <Users className="w-5 h-5 text-blue-600 mr-2" />
+                <Users className="w-5 h-5 text-purple-600 mr-2" />
                 <h1 className="text-lg font-medium text-gray-800">
                   Operational Manager Dashboard
                 </h1>
-                {username && (
-                  <span className="ml-2 text-sm text-gray-600">
-                    (Logged in as: {username})
-                  </span>
-                )}
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button
@@ -150,7 +131,7 @@ const OperationalManagerPage: React.FC = () => {
                   <span className="sm:hidden">Home</span>
                 </button>
                 <button
-                  onClick={handleLogout}
+                  onClick={() => navigate('/')}
                   className="text-red-600 hover:text-red-800 font-medium flex items-center"
                 >
                   <LogOut className="w-4 h-4 mr-1" />
@@ -166,7 +147,7 @@ const OperationalManagerPage: React.FC = () => {
               <button
                 className={`py-4 px-6 text-sm font-medium ${
                   activeView === 'pending'
-                    ? 'text-blue-600 border-b-2 border-blue-500'
+                    ? 'text-purple-600 border-b-2 border-purple-500'
                     : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'
                 }`}
                 onClick={() => setActiveView('pending')}
@@ -181,7 +162,7 @@ const OperationalManagerPage: React.FC = () => {
               <button
                 className={`py-4 px-6 text-sm font-medium ${
                   activeView === 'balance'
-                    ? 'text-blue-600 border-b-2 border-blue-500'
+                    ? 'text-purple-600 border-b-2 border-purple-500'
                     : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'
                 }`}
                 onClick={() => setActiveView('balance')}
@@ -195,14 +176,14 @@ const OperationalManagerPage: React.FC = () => {
           <div className="p-6 space-y-6">
             {activeView === 'pending' ? (
               <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-blue-50 p-4 border-b border-blue-100 flex justify-between items-center">
-                  <h2 className="text-lg font-medium text-blue-800 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                <div className="bg-purple-50 p-4 border-b border-purple-100 flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-purple-800 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-purple-600" />
                     Employee Leave Requests
                   </h2>
                   <button
                     onClick={fetchLeaveRequests}
-                    className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    className="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
                   >
                     Refresh
                   </button>
@@ -210,7 +191,7 @@ const OperationalManagerPage: React.FC = () => {
                 
                 {isLoading ? (
                   <div className="p-8 text-center">
-                    <div className="inline-block animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                    <div className="inline-block animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full"></div>
                     <p className="mt-2 text-sm text-gray-500">Loading leave requests...</p>
                   </div>
                 ) : pendingLeaveRequests.length === 0 ? (
@@ -234,7 +215,7 @@ const OperationalManagerPage: React.FC = () => {
                             </div>
                             
                             <div className="mt-2 text-sm text-gray-700">
-                              <div className="font-medium text-blue-700">{formatLeaveType(request.leave_type)}</div>
+                              <div className="font-medium text-purple-700">{formatLeaveType(request.leave_type)}</div>
                               <div className="mt-1">
                                 {format(parseISO(request.start_date), 'MMM d, yyyy')}
                                 {request.start_date !== request.end_date ? 
