@@ -233,6 +233,7 @@ function HrPage() {
     toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
   };
 
+  // Updated to use recordId for finding the day record
   const handleEditTime = (employeeIndex: number, dayIndex: number, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => {
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
@@ -240,6 +241,7 @@ function HrPage() {
       // Get the record information
       const employee = newRecords[employeeIndex];
       const day = employee.days[dayIndex];
+      const recordId = day.recordId;
       
       // If notes is provided and it's not "OFF-DAY", it's a leave request
       const isLeaveRequest = notes && notes !== 'OFF-DAY' && notes.includes('leave');
@@ -250,16 +252,33 @@ function HrPage() {
         day.lastCheckOut = null;
         day.missingCheckIn = true;
         day.missingCheckOut = true;
-        day.hoursWorked = isLeaveRequest ? 9.0 : 0.0;
-        day.notes = notes || 'OFF-DAY';
-        day.shiftType = isLeaveRequest ? 'off_day' : 'off_day';
-        day.isLate = false;
-        day.earlyLeave = false;
-        day.excessiveOvertime = false;
-        day.penaltyMinutes = 0;
-        // Update display values
-        day.displayCheckIn = isLeaveRequest ? notes : 'OFF-DAY';
-        day.displayCheckOut = isLeaveRequest ? notes : 'OFF-DAY';
+        
+        // For OFF-DAY records
+        if (notes === 'OFF-DAY') {
+          day.hoursWorked = 0;
+          day.notes = 'OFF-DAY';
+          day.shiftType = 'off_day';
+          day.isLate = false;
+          day.earlyLeave = false;
+          day.excessiveOvertime = false;
+          day.penaltyMinutes = 0;
+          // Update display values
+          day.displayCheckIn = 'OFF-DAY';
+          day.displayCheckOut = 'OFF-DAY';
+        } 
+        // For leave type records
+        else if (isLeaveRequest) {
+          day.hoursWorked = 9.0; // Leave days get 9 hours
+          day.notes = notes;
+          day.shiftType = 'off_day'; // Use off_day type for leaves too
+          day.isLate = false;
+          day.earlyLeave = false;
+          day.excessiveOvertime = false;
+          day.penaltyMinutes = 0;
+          // Update display values
+          day.displayCheckIn = notes;
+          day.displayCheckOut = notes;
+        }
         
         return newRecords;
       }
@@ -547,7 +566,7 @@ function HrPage() {
       lastCheckOut: shiftData.checkOutDate,
       hoursWorked: shiftData.hoursWorked || 9.0, // Use provided hours or default to standard shift
       approved: false, // Not auto-approved
-      shiftType: shiftData.shift_type,
+      shiftType: shiftData.shiftType,
       notes: 'Employee submitted shift - HR approved',
       missingCheckIn: false,
       missingCheckOut: false,
@@ -555,8 +574,8 @@ function HrPage() {
       earlyLeave: false,
       excessiveOvertime: shiftData.hoursWorked > 9.5,
       penaltyMinutes: 0,
-      displayCheckIn: DISPLAY_SHIFT_TIMES[shiftData.shift_type].startTime,
-      displayCheckOut: DISPLAY_SHIFT_TIMES[shiftData.shift_type].endTime,
+      displayCheckIn: DISPLAY_SHIFT_TIMES[shiftData.shiftType].startTime,
+      displayCheckOut: DISPLAY_SHIFT_TIMES[shiftData.shiftType].endTime,
       working_week_start: shiftData.date, // Set working_week_start for proper grouping
       recordId: `${employeeData.employee_number || employeeData.employeeNumber}-${shiftData.date}`
     };

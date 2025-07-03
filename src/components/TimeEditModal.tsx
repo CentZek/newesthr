@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { format, parse, addDays } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { X, Clock, AlertCircle, Info, RefreshCw, Repeat, Briefcase } from 'lucide-react';
 import { EmployeeRecord, DailyRecord, DISPLAY_SHIFT_TIMES } from '../types';
 import { formatTimeWith24Hour } from '../utils/dateTimeHelper';
-import { isLateCheckIn } from '../utils/shiftCalculations';
 
 interface TimeEditModalProps {
   employee: EmployeeRecord;
@@ -12,12 +11,7 @@ interface TimeEditModalProps {
   onSave: (checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => void;
 }
 
-const TimeEditModal: React.FC<TimeEditModalProps> = ({ 
-  employee, 
-  day, 
-  onClose, 
-  onSave
-}) => {
+const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, onSave }) => {
   console.log(`TimeEditModal rendered with date: ${day.date}, recordId: ${day.recordId || 'unknown'}`);
   
   const [checkInTime, setCheckInTime] = useState<string>(
@@ -129,17 +123,6 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
       return (hour === 8);
     } catch (error) {
       return false;
-    }
-  };
-
-  // Helper to convert check-in time string to Date object for isLateCheckIn validation
-  const getCheckInDateForValidation = (): Date | null => {
-    if (!checkInTime) return null;
-    
-    try {
-      return parse(`${dateStr} ${checkInTime}`, 'yyyy-MM-dd HH:mm', new Date());
-    } catch (error) {
-      return null;
     }
   };
 
@@ -267,11 +250,6 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
                 <p className="text-gray-500">Current Hours</p>
                 <p className="font-medium">{day.hoursWorked.toFixed(2)}</p>
               </div>
-              {day.recordId && (
-                <div className="col-span-2 text-xs text-gray-400">
-                  <p>Record ID: {day.recordId}</p>
-                </div>
-              )}
             </div>
           </div>
           
@@ -392,14 +370,11 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
                   {checkInTime && recordType === 'edit' && (
                     <>
                       <span>You entered: {formatTimeWithAmPm(checkInTime)}</span>
-                      {(() => {
-                        const checkInDate = getCheckInDateForValidation();
-                        return checkInDate && isLateCheckIn(checkInDate, day.shiftType) && (
-                          <span className="ml-2 text-amber-600 font-medium">
-                            (Will be flagged as late)
-                          </span>
-                        );
-                      })()}
+                      {isLateForShift(checkInTime) && (
+                        <span className="ml-2 text-amber-600 font-medium">
+                          (Will be flagged as late)
+                        </span>
+                      )}
                       {is7AMCanteenHours(checkInTime) && day.shiftType !== 'canteen' && (
                         <span className="ml-2 text-blue-600 font-medium">
                           (Matches canteen 07:00 shift)
@@ -520,5 +495,42 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({
     </div>
   );
 };
+
+// Helper function to check if a time would be considered late based on shift type
+const isLateForShift = (timeStr: string): boolean => {
+  if (!timeStr) return false;
+  
+  try {
+    const hour = parseInt(timeStr.split(':')[0], 10);
+    const minute = parseInt(timeStr.split(':')[1], 10);
+    
+    // For canteen shifts
+    if (hour === 7) {
+      return minute > 10; // More than 10 minutes late for 7AM start
+    } else if (hour === 8) {
+      return minute > 10; // More than 10 minutes late for 8AM start
+    }
+    
+    return false;
+  } catch (error) {
+    return false;
+  }
+};
+
+// Helper function for date parsing
+function parse(dateString: string, formatString: string, referenceDate: Date): Date {
+  const [datePart, timePart] = dateString.split(' ');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  
+  return new Date(year, month - 1, day, hour, minute);
+}
+
+// Helper function to add days to a date
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
 
 export default TimeEditModal;
