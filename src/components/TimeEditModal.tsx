@@ -24,16 +24,41 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
   const [leaveType, setLeaveType] = useState<string>(day.notes === 'OFF-DAY' ? '' : day.notes || '');
   const [recordType, setRecordType] = useState<'edit' | 'offday' | 'leave'>('edit');
   
+  // Reset all state when day changes to ensure the modal always shows the correct data
   useEffect(() => {
-    // Set initial record type based on day.notes
+    console.log(`Day data changed in TimeEditModal: date=${day.date}, shiftType=${day.shiftType}, recordId=${day.recordId || 'unknown'}`);
+    
+    // Reset form state based on new day data
+    if (day.firstCheckIn) {
+      setCheckInTime(format(day.firstCheckIn, 'HH:mm'));
+    } else {
+      setCheckInTime('');
+    }
+    
+    if (day.lastCheckOut) {
+      setCheckOutTime(format(day.lastCheckOut, 'HH:mm'));
+    } else {
+      setCheckOutTime('');
+    }
+    
+    // Set record type based on day.notes
     if (day.notes === 'OFF-DAY') {
       setRecordType('offday');
     } else if (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave')) {
       setRecordType('leave');
+      setLeaveType(day.notes);
     } else {
       setRecordType('edit');
     }
-  }, [day.notes]);
+    
+    // Reset error states
+    setCheckInError('');
+    setCheckOutError('');
+    
+    // Reset correction info
+    setShowCorrectionInfo(!!day.correctedRecords);
+    
+  }, [day]);
 
   const dateStr = format(new Date(day.date), 'yyyy-MM-dd');
   
@@ -44,7 +69,8 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
     { value: 'marriage-leave', label: 'Marriage Leave' },
     { value: 'bereavement-leave', label: 'Bereavement Leave' },
     { value: 'maternity-leave', label: 'Maternity Leave' },
-    { value: 'paternity-leave', label: 'Paternity Leave' }
+    { value: 'paternity-leave', label: 'Paternity Leave' },
+    { value: 'annual-leave', label: 'Annual Leave' }
   ];
   
   // Determine if this might be a night shift based on check-in time
@@ -246,6 +272,11 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
                 <p className="text-gray-500">Current Hours</p>
                 <p className="font-medium">{day.hoursWorked.toFixed(2)}</p>
               </div>
+              {day.recordId && (
+                <div className="col-span-2 text-xs text-gray-400">
+                  <p>Record ID: {day.recordId}</p>
+                </div>
+              )}
             </div>
           </div>
           
