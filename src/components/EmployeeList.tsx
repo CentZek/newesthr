@@ -73,16 +73,8 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   };
 
   const openTimeEditModal = (empIndex: number, dayIndex: number) => {
-    // Store the date for this record to ensure consistent selection
     const date = employeeRecords[empIndex].days[dayIndex].date;
-    
-    // Add a stable record ID if not present (use a combination of employee number and date)
-    if (!employeeRecords[empIndex].days[dayIndex].recordId) {
-      employeeRecords[empIndex].days[dayIndex].recordId = `${employeeRecords[empIndex].employeeNumber}-${date}`;
-    }
-    
-    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${date}, recordId: ${employeeRecords[empIndex].days[dayIndex].recordId}`);
-    
+    console.log(`Opening edit modal for employee ${empIndex}, day index ${dayIndex}, date ${date}`);
     setSelectedEmployee(empIndex);
     setSelectedDay(dayIndex);
     setSelectedDate(date);
@@ -266,11 +258,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     const isLateNightCheckIn = day.shiftType === 'night' && day.firstCheckIn && isLateNightShiftCheckIn(day.firstCheckIn, day.shiftType);
     const hasRawData = day.allTimeRecords && day.allTimeRecords.length > 0;
     const isRawDataExpanded = expandedRawData?.empIndex === empIndex && expandedRawData?.dayIndex === dayIndex;
-    
-    // Generate a stable record ID if it doesn't exist yet
-    if (!day.recordId) {
-      day.recordId = `${employee.employeeNumber}-${day.date}`;
-    }
     
     // MODIFIED: Prioritize display values for manual entries and employee-submitted shifts
     let checkInDisplay = '';
@@ -483,11 +470,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                   {sortedDays.map((day, dayIndex) => {
                     if (showApproved && !day.approved) return null;
                     
-                    // Generate a stable record ID if it doesn't exist yet
-                    if (!day.recordId) {
-                      day.recordId = `${employee.employeeNumber}-${day.date}`;
-                    }
-                    
                     const hasMissingRecords = day.missingCheckIn || day.missingCheckOut;
                     const isManualEntry = day.notes === 'Manual entry' || day.notes?.includes('Manual entry') || day.notes?.includes('Employee submitted');
                     const isOffDay = day.notes === 'OFF-DAY' || day.shiftType === 'off_day';
@@ -627,7 +609,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                             <button 
                               onClick={() => openTimeEditModal(empIndex, dayIndex)} 
                               data-date={day.date}
-                              data-recordid={day.recordId}
                               className={`p-1 rounded-full ${hasMissingRecords || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`} 
                               title={wasCorrected ? "Edit time (Fixed records)" : "Edit Time"}
                             >

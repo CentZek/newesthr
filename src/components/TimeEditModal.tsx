@@ -12,7 +12,7 @@ interface TimeEditModalProps {
 }
 
 const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, onSave }) => {
-  console.log(`TimeEditModal rendered with date: ${day.date}, recordId: ${day.recordId || 'unknown'}`);
+  console.log(`TimeEditModal rendered with date: ${day.date}`);
   
   const [checkInTime, setCheckInTime] = useState<string>(
     day.firstCheckIn ? format(day.firstCheckIn, 'HH:mm') : ''
@@ -28,7 +28,7 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
   
   // Reset all state when day changes to ensure the modal always shows the correct data
   useEffect(() => {
-    console.log(`Day data changed in TimeEditModal: date=${day.date}, shiftType=${day.shiftType}, recordId=${day.recordId || 'unknown'}`);
+    console.log(`Day data changed in TimeEditModal: date=${day.date}, shiftType=${day.shiftType}`);
     
     // Reset form state based on new day data
     if (day.firstCheckIn) {

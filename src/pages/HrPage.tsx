@@ -233,15 +233,10 @@ function HrPage() {
     toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
   };
 
-  // Updated to use recordId for finding the day record
   const handleEditTime = (employeeIndex: number, dayIndex: number, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => {
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
-      
-      // Get the record information
-      const employee = newRecords[employeeIndex];
-      const day = employee.days[dayIndex];
-      const recordId = day.recordId;
+      const day = newRecords[employeeIndex].days[dayIndex];
       
       // If notes is provided and it's not "OFF-DAY", it's a leave request
       const isLeaveRequest = notes && notes !== 'OFF-DAY' && notes.includes('leave');
@@ -576,8 +571,7 @@ function HrPage() {
       penaltyMinutes: 0,
       displayCheckIn: DISPLAY_SHIFT_TIMES[shiftData.shiftType].startTime,
       displayCheckOut: DISPLAY_SHIFT_TIMES[shiftData.shiftType].endTime,
-      working_week_start: shiftData.date, // Set working_week_start for proper grouping
-      recordId: `${employeeData.employee_number || employeeData.employeeNumber}-${shiftData.date}`
+      working_week_start: shiftData.date // Set working_week_start for proper grouping
     };
     
     // Look for existing employee in records
@@ -660,13 +654,6 @@ function HrPage() {
         updatedRecords[employeeIndex].days.sort((a, b) => 
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
-        
-        // Add recordId to the new entries if not present
-        updatedRecords[employeeIndex].days.forEach(day => {
-          if (!day.recordId) {
-            day.recordId = `${updatedRecords[employeeIndex].employeeNumber}-${day.date}`;
-          }
-        });
       }
       
       // Update state with the modified records
