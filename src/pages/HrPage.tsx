@@ -1,6 +1,3 @@
-Here's the fixed version with the missing closing bracket:
-
-```typescript
 const handleApplyPenalty = (employeeIndex: number, dayIndex: number, penaltyMinutes: number) => {
   console.log(`Applying penalty of ${penaltyMinutes} minutes to employee ${employeeIndex}, day ${dayIndex}`);
   
@@ -62,4 +59,3 @@ const handleApplyPenalty = (employeeIndex: number, dayIndex: number, penaltyMinu
   
   toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
 };
-```
