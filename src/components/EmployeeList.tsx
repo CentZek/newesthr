@@ -27,6 +27,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const [timeEditModalOpen, setTimeEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [expandedRawData, setExpandedRawData] = useState<{empIndex: number, dayIndex: number} | null>(null);
   
   // State for approve all for employee confirmation
@@ -296,10 +297,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <button onClick={() => openTimeEditModal(empIndex, dayIndex)} className={`p-1 rounded-full ${day.missingCheckIn || day.missingCheckOut || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`}>
               <PenSquare className="w-5 h-5" />
             </button>
-            <button onClick={() => openTimeEditModal(empIndex, day.id || '')} className={`p-1 rounded-full ${hasMissingRecords || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`} title={wasCorrected ? "Edit time (Fixed records)" : "Edit Time"}>
+            <button onClick={() => openPenaltyModal(empIndex, dayIndex)} className={`p-1 rounded-full text-gray-600 hover:bg-gray-100 ${isOffDay || isLeaveDay ? 'opacity-50 cursor-not-allowed' : ''}`} title="Apply Penalty" disabled={isOffDay || isLeaveDay}>
               <AlertTriangle className="w-5 h-5" />
             </button>
-            <button onClick={() => openTimeEditModal(empIndex, day.id || '')} className={`p-1 rounded-full ${hasMissingRecords || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`}>
+            <button 
               onClick={(e) => confirmApproveDay(empIndex, dayIndex, e)}
               className={`p-1 rounded-full ${
                 day.approved 
@@ -629,16 +630,18 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       {timeEditModalOpen && selectedEmployee !== null && selectedDay !== null && (
        <TimeEditModal
          employee={employeeRecords[selectedEmployee]}
-         dayId={selectedDayId || ''}
+         dayId={selectedDayId || selectedDay.toString()}
          onClose={() => {
            setTimeEditModalOpen(false);
            setSelectedEmployee(null);
+           setSelectedDay(null);
            setSelectedDayId(null);
          }}
          onSave={(dayId, checkIn, checkOut, shiftType, notes) => {
            handleEditTime(selectedEmployee, dayId, checkIn, checkOut, shiftType, notes);
            setTimeEditModalOpen(false);
            setSelectedEmployee(null);
+           setSelectedDay(null);
            setSelectedDayId(null);
          }}
        />
