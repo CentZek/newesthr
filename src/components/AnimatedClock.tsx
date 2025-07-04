@@ -60,7 +60,7 @@ const AnimatedClock: React.FC = () => {
         style={{
           transform: `rotate(${angle}deg) translate(0, -35%)`,
           top: '12%',
-          left: 'calc(50% - ${isMainHour ? "0.5px" : "0.25px"})'
+          left: isMainHour ? 'calc(50% - 0.5px)' : 'calc(50% - 0.25px)'
         }}
       ></div>
     );
