@@ -18,7 +18,6 @@ export interface TimeRecord {
 
 export interface DailyRecord {
   date: string;
-  id?: string; // Add unique ID for persistence across reloads
   firstCheckIn: Date | null;
   lastCheckOut: Date | null;
   hoursWorked: number;

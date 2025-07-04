@@ -629,10 +629,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       {timeEditModalOpen && selectedEmployee !== null && selectedDay !== null && (
         <TimeEditModal
           employee={employeeRecords[selectedEmployee]}
-          day={employeeRecords[selectedEmployee].days.find(d => 
-            // If the day has an ID and the index has changed, find by ID instead of index
-            d.id === employeeRecords[selectedEmployee].days[selectedDay].id
-          ) || employeeRecords[selectedEmployee].days[selectedDay]}
+          day={employeeRecords[selectedEmployee].days[selectedDay]}
           onClose={() => {
             setTimeEditModalOpen(false);
             setSelectedEmployee(null);
