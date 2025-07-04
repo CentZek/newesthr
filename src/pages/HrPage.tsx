@@ -249,11 +249,7 @@ function HrPage() {
   const handleEditTime = (employeeIndex: number, dayIndex: number, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => {
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
-      // Get the specific day by index first
-      let day = newRecords[employeeIndex].days[dayIndex];
-      
-      // Store the date before any modifications (this will remain stable)
-      const editDate = day.date;
+      const day = newRecords[employeeIndex].days[dayIndex];
       
       // If notes is provided and it's not "OFF-DAY", it's a leave request
       const isLeaveRequest = notes && notes !== 'OFF-DAY' && notes.includes('leave');
@@ -358,10 +354,7 @@ function HrPage() {
     });
 
     // Directly update in Supabase to ensure changes persist after refresh
-    setTimeout(() => {
-      // Use timeout to ensure state is updated before we call updateInSupabase
-      updateInSupabase(employeeRecords);
-    }, 100);
+    updateInSupabase(employeeRecords);
     
     toast.success('Time records updated successfully');
   };

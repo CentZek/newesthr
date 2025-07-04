@@ -398,11 +398,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
         
-        // Sort days by date chronologically
-        const sortedDays = [...employee.days].sort((a, b) => 
-          new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
-        
         return (
           <div key={employee.employeeNumber} className="border border-gray-200 rounded-md overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100" onClick={() => toggleEmployeeExpanded(empIndex)}>
