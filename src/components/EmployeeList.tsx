@@ -27,6 +27,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const [timeEditModalOpen, setTimeEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedRawData, setExpandedRawData] = useState<{empIndex: number, dayIndex: number} | null>(null);
   
   // State for approve all for employee confirmation
@@ -39,16 +40,20 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const [itemToApprove, setItemToApprove] = useState<{empIndex: number, dayIndex: number} | null>(null);
   const [isApprovingItem, setIsApprovingItem] = useState(false);
 
-  const openPenaltyModal = (empIndex: number, dayIndex: number) => {
+  const openTimeEditModal = (empIndex: number, dayIndex: number) => {
+    const date = employeeRecords[empIndex].days[dayIndex].date;
     setSelectedEmployee(empIndex);
     setSelectedDay(dayIndex);
-    setPenaltyModalOpen(true);
+    setSelectedDate(date);
+    setTimeEditModalOpen(true);
   };
 
-  const openTimeEditModal = (empIndex: number, dayIndex: number) => {
+  const openPenaltyModal = (empIndex: number, dayIndex: number) => {
+    const date = employeeRecords[empIndex].days[dayIndex].date;
     setSelectedEmployee(empIndex);
     setSelectedDay(dayIndex);
-    setTimeEditModalOpen(true);
+    setSelectedDate(date);
+    setPenaltyModalOpen(true);
   };
 
   const toggleRawData = (empIndex: number, dayIndex: number) => {
@@ -615,13 +620,23 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       {penaltyModalOpen && selectedEmployee !== null && selectedDay !== null && (
         <PenaltyModal 
           employee={employeeRecords[selectedEmployee]}
-          day={employeeRecords[selectedEmployee].days[selectedDay]}
+          day={selectedDate ? employeeRecords[selectedEmployee].days.find(day => day.date === selectedDate) || employeeRecords[selectedEmployee].days[selectedDay] : employeeRecords[selectedEmployee].days[selectedDay]}
           onClose={() => setPenaltyModalOpen(false)}
           onApply={(penaltyMinutes) => {
-            handleApplyPenalty(selectedEmployee, selectedDay, penaltyMinutes);
+            if (selectedDate) {
+              const dayIndex = employeeRecords[selectedEmployee].days.findIndex(day => day.date === selectedDate);
+              if (dayIndex !== -1) {
+                handleApplyPenalty(selectedEmployee, dayIndex, penaltyMinutes);
+              } else {
+                handleApplyPenalty(selectedEmployee, selectedDay, penaltyMinutes);
+              }
+            } else {
+              handleApplyPenalty(selectedEmployee, selectedDay, penaltyMinutes);
+            }
             setPenaltyModalOpen(false);
             setSelectedEmployee(null);
             setSelectedDay(null);
+            setSelectedDate(null);
           }}
         />
       )}
@@ -629,17 +644,28 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       {timeEditModalOpen && selectedEmployee !== null && selectedDay !== null && (
         <TimeEditModal
           employee={employeeRecords[selectedEmployee]}
-          day={employeeRecords[selectedEmployee].days[selectedDay]}
+          day={selectedDate ? employeeRecords[selectedEmployee].days.find(day => day.date === selectedDate) || employeeRecords[selectedEmployee].days[selectedDay] : employeeRecords[selectedEmployee].days[selectedDay]}
           onClose={() => {
             setTimeEditModalOpen(false);
             setSelectedEmployee(null);
             setSelectedDay(null);
+            setSelectedDate(null);
           }}
           onSave={(checkIn, checkOut, shiftType, notes) => {
-            handleEditTime(selectedEmployee, selectedDay, checkIn, checkOut, shiftType, notes);
+            if (selectedDate) {
+              const dayIndex = employeeRecords[selectedEmployee].days.findIndex(day => day.date === selectedDate);
+              if (dayIndex !== -1) {
+                handleEditTime(selectedEmployee, dayIndex, checkIn, checkOut, shiftType, notes);
+              } else {
+                handleEditTime(selectedEmployee, selectedDay, checkIn, checkOut, shiftType, notes);
+              }
+            } else {
+              handleEditTime(selectedEmployee, selectedDay, checkIn, checkOut, shiftType, notes);
+            }
             setTimeEditModalOpen(false);
             setSelectedEmployee(null);
             setSelectedDay(null);
+            setSelectedDate(null);
           }}
         />
       )}
