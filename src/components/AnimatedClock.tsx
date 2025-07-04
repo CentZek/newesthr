@@ -51,6 +51,9 @@ const AnimatedClock: React.FC = () => {
   // Generate hour markers
   const hourMarkers = [];
   for (let i = 0; i < 12; i++) {
+    // Skip marker at 12 o'clock position (0 degrees) to remove the unwanted mark
+    if (i === 0) continue;
+    
     const angle = i * 30; // 30 degrees per hour
     const isMainHour = i % 3 === 0; // Highlight 12, 3, 6, 9
     hourMarkers.push(
