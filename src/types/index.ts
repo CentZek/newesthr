@@ -17,7 +17,6 @@ export interface TimeRecord {
 }
 
 export interface DailyRecord {
-  id?: string;  // Unique identifier from database
   date: string;
   firstCheckIn: Date | null;
   lastCheckOut: Date | null;

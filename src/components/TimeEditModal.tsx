@@ -6,22 +6,12 @@ import { formatTimeWith24Hour } from '../utils/dateTimeHelper';
 
 interface TimeEditModalProps {
   employee: EmployeeRecord;
-  dayId: string;
+  day: DailyRecord;
   onClose: () => void;
-  onSave: (dayId: string, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes?: string) => void;
+  onSave: (checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => void;
 }
 
-const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, dayId, onClose, onSave }) => {
-  // Find the day with the matching ID
-  const day = employee.days.find(d => d.id === dayId);
-  
-  // If day not found, show an error and close
-  if (!day) {
-    console.error(`Day with ID ${dayId} not found for employee ${employee.name}`);
-    onClose();
-    return null;
-  }
-
+const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, onSave }) => {
   const [checkInTime, setCheckInTime] = useState<string>(
     day.firstCheckIn ? format(day.firstCheckIn, 'HH:mm') : ''
   );
@@ -195,7 +185,7 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, dayId, onClose,
     }
 
     if (!hasError) {
-      onSave(dayId, checkIn, checkOut, null, recordType === 'offday' ? 'OFF-DAY' : (recordType === 'leave' ? leaveType : ''));
+      onSave(checkIn, checkOut, null, recordType === 'offday' ? 'OFF-DAY' : (recordType === 'leave' ? leaveType : ''));
     }
   };
 
