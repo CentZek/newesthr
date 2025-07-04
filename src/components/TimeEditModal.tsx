@@ -97,6 +97,36 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
       return false;
     }
   };
+  
+  // Check if time falls within a morning shift time range
+  const is7AMCanteenHours = (timeStr: string): boolean => {
+    if (!timeStr) return false;
+    
+    try {
+      const hour = parseInt(timeStr.split(':')[0], 10);
+      const minute = parseInt(timeStr.split(':')[1], 10);
+      
+      // 07:00 is standard early canteen staff start time
+      return (hour === 7);
+    } catch (error) {
+      return false;
+    }
+  };
+  
+  // Check if time falls within a morning shift time range
+  const is8AMCanteenHours = (timeStr: string): boolean => {
+    if (!timeStr) return false;
+    
+    try {
+      const hour = parseInt(timeStr.split(':')[0], 10);
+      const minute = parseInt(timeStr.split(':')[1], 10);
+      
+      // 08:00 is standard late canteen staff start time
+      return (hour === 8);
+    } catch (error) {
+      return false;
+    }
+  };
 
   // Helper to convert 24-hour time to 12-hour format with AM/PM
   const formatTimeWithAmPm = (timeString: string): string => {
