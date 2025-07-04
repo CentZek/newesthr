@@ -50,17 +50,20 @@ const AnimatedClock: React.FC = () => {
 
   // Generate hour markers
   const hourMarkers = [];
-  for (let i = 2; i < 12; i++) {
+  // Start from index 3 (4 o'clock) to avoid any markers in the top section
+  for (let i = 3; i < 12; i++) {
     const angle = i * 30; // 30 degrees per hour
     const isMainHour = i % 3 === 0; // Highlight 12, 3, 6, 9
     hourMarkers.push(
       <div 
         key={i}
-        className={`absolute ${isMainHour ? 'w-1 h-2.5' : 'w-0.5 h-1.5'} bg-[#1a237e] rounded-full`}
+        className={`absolute ${isMainHour ? 'w-1 h-2' : 'w-0.5 h-1.5'} bg-[#1a237e] rounded-full`}
         style={{
           transform: `rotate(${angle}deg) translate(0, -35%)`,
           top: '12%',
-          transformOrigin: 'bottom center'
+          left: '50%',
+          marginLeft: isMainHour ? '-0.5px' : '-0.25px',
+          transformOrigin: 'center bottom'
         }}
       ></div>
     );
@@ -70,9 +73,10 @@ const AnimatedClock: React.FC = () => {
     <div 
       ref={clockRef}
       className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full shadow-lg transition-all duration-300"
-      style={{ 
+      style={{
         transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-        transformStyle: 'preserve-3d'
+        transformStyle: 'preserve-3d',
+        overflow: 'hidden'
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => {
@@ -81,15 +85,22 @@ const AnimatedClock: React.FC = () => {
       }}
     >
       {/* Clock face with 3D effect */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#f0f4ff] to-[#d4dcff] shadow-inner border border-gray-200" 
+      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#f0f4ff] to-[#d4dcff] shadow-inner" 
         style={{ transform: 'translateZ(2px)' }}></div>
       
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full" 
-        style={{ transform: 'translateZ(4px)' }}>
-        
-        {/* Remove the border circle completely to eliminate any top marks */}
-        <div className="absolute inset-1 rounded-full opacity-30" style={{ borderBottom: '4px solid #e0e5ff', borderLeft: '4px solid #e0e5ff', borderRight: '4px solid #e0e5ff', borderTop: 'none' }}>
-          {/* Hour markers rendered inside this circle */}
+        style={{ transform: 'translateZ(4px)', zIndex: 1 }}>
+                
+        {/* Revised clock markings circle - only show bottom half with no top border */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/2 rounded-b-full" 
+             style={{ 
+               borderLeft: '4px solid rgba(224, 229, 255, 0.3)', 
+               borderRight: '4px solid rgba(224, 229, 255, 0.3)', 
+               borderBottom: '4px solid rgba(224, 229, 255, 0.3)',
+               marginLeft: '4px',
+               marginRight: '4px',
+               zIndex: 0
+             }}>
           {hourMarkers}
         </div>
         
@@ -108,14 +119,14 @@ const AnimatedClock: React.FC = () => {
           className="absolute z-10"
           style={{ 
             width: '4px',
-            height: '24%', 
+            height: '22%', 
             bottom: '50%',
             left: 'calc(50% - 2px)',
             transform: `rotate(${hoursDegrees}deg)`,
             transformOrigin: '50% 100%',
             background: 'linear-gradient(to top, #1a237e, #3949ab)',
             borderRadius: '2px 2px 0 0',
-            boxShadow: '0 0 5px rgba(0,0,0,0.2)'
+            zIndex: 10
           }}
         ></div>
         
@@ -124,14 +135,14 @@ const AnimatedClock: React.FC = () => {
           className="absolute z-15"
           style={{ 
             width: '3px',
-            height: '34%',
+            height: '32%',
             bottom: '50%',
             left: 'calc(50% - 1.5px)',
             transform: `rotate(${minutesDegrees}deg)`,
             transformOrigin: '50% 100%',
             background: 'linear-gradient(to top, #283593, #5c6bc0)',
             borderRadius: '1.5px 1.5px 0 0',
-            boxShadow: '0 0 3px rgba(0,0,0,0.1)'
+            zIndex: 15
           }}
         ></div>
         
@@ -140,14 +151,13 @@ const AnimatedClock: React.FC = () => {
           className="absolute z-20"
           style={{ 
             width: '1.5px',
-            height: '39%',
+            height: '36%',
             bottom: '50%',
             left: 'calc(50% - 0.75px)',
             transform: `rotate(${secondsDegrees}deg)`,
             transformOrigin: '50% 100%',
             background: '#ff5252',
-            borderRadius: '1px',
-            boxShadow: '0 0 5px rgba(255,0,0,0.2)'
+            borderRadius: '1px'
           }}
         ></div>
         
@@ -156,11 +166,11 @@ const AnimatedClock: React.FC = () => {
           className="absolute z-20"
           style={{ 
             width: '1px',
-            height: '15%',
+            height: '12%',
             top: '50%',
             left: 'calc(50% - 0.5px)',
             transform: `rotate(${secondsDegrees + 180}deg)`,
-            transformOrigin: 'top center',
+            transformOrigin: '50% 0%',
             background: '#ff5252',
             borderRadius: '0.5px'
           }}
@@ -168,7 +178,15 @@ const AnimatedClock: React.FC = () => {
       </div>
       
       {/* Side of the clock for 3D effect */}
-      <div className="absolute inset-0 rounded-full border-8 border-[#c7d0ff] opacity-30"
+      <div className="absolute inset-0 rounded-full opacity-30"
+        style={{ 
+          borderRadius: '50%',
+          borderBottom: '8px solid #c7d0ff', 
+          borderLeft: '8px solid #c7d0ff', 
+          borderRight: '8px solid #c7d0ff',
+          borderTop: 'none', 
+          transform: 'translateZ(-2px)'
+        }}
         style={{ transform: 'translateZ(-2px)' }}></div>
         
       {/* Clock shadow (cast on the page) */}
