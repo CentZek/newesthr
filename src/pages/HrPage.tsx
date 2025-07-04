@@ -181,6 +181,18 @@ function HrPage() {
     });
   };
 
+  // Helper function to check if a day can be approved
+  const canApproveDay = (day: DailyRecord): boolean => {
+    // OFF-DAY and leave records can always be approved regardless of timestamp values
+    if (day.notes === 'OFF-DAY' || 
+        (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave'))) {
+      return true;
+    }
+    
+    // For regular shifts, both check-in and check-out times must be present
+    return (day.firstCheckIn !== null && day.lastCheckOut !== null);
+  };
+
   const handleToggleApproveDay = (employeeIndex: number, dayIndex: number) => {
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
@@ -258,7 +270,7 @@ function HrPage() {
           day.earlyLeave = false;
           day.excessiveOvertime = false;
           day.penaltyMinutes = 0;
-          // Update display values
+          // Set display values to "OFF-DAY"
           day.displayCheckIn = 'OFF-DAY';
           day.displayCheckOut = 'OFF-DAY';
         } 
@@ -271,10 +283,13 @@ function HrPage() {
           day.earlyLeave = false;
           day.excessiveOvertime = false;
           day.penaltyMinutes = 0;
-          // Update display values
+          // Set display values to the leave type
           day.displayCheckIn = notes;
           day.displayCheckOut = notes;
         }
+        
+        // Make sure we set the working week start date
+        day.working_week_start = day.date;
         
         return newRecords;
       }
@@ -295,9 +310,15 @@ function HrPage() {
         day.notes = 'Manual entry';
       }
       
-      // Determine shift type if not already set
-      if (!day.shiftType && day.firstCheckIn) {
-        day.shiftType = determineShiftType(day.firstCheckIn);
+      // Determine shift type if not already set or if explicitly provided
+      let effectiveShiftType = shiftType;
+      if (!effectiveShiftType && day.firstCheckIn) {
+        effectiveShiftType = determineShiftType(day.firstCheckIn);
+      }
+      
+      // Update the shift type if needed
+      if (effectiveShiftType) {
+        day.shiftType = effectiveShiftType;
       }
       
       // Recalculate hours and flags
@@ -314,6 +335,19 @@ function HrPage() {
         );
         
         console.log(`Calculated ${day.hoursWorked.toFixed(2)} hours for edited time records with ${day.penaltyMinutes} minute penalty`);
+        
+        // CRITICAL FIX: Update display values based on shift type for proper display
+        if (day.shiftType && DISPLAY_SHIFT_TIMES[day.shiftType as keyof typeof DISPLAY_SHIFT_TIMES]) {
+          day.displayCheckIn = DISPLAY_SHIFT_TIMES[day.shiftType as keyof typeof DISPLAY_SHIFT_TIMES].startTime;
+          day.displayCheckOut = DISPLAY_SHIFT_TIMES[day.shiftType as keyof typeof DISPLAY_SHIFT_TIMES].endTime;
+        }
+        
+        // Set working_week_start for night shift records
+        if (day.shiftType === 'night') {
+          day.working_week_start = day.date;
+        } else {
+          day.working_week_start = day.date;
+        }
       }
       
       return newRecords;
@@ -323,18 +357,6 @@ function HrPage() {
     updateInSupabase(employeeRecords);
     
     toast.success('Time records updated successfully');
-  };
-
-  // Helper function to check if a day can be approved
-  const canApproveDay = (day: DailyRecord): boolean => {
-    // OFF-DAY and leave records can always be approved regardless of timestamp values
-    if (day.notes === 'OFF-DAY' || 
-        (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave'))) {
-      return true;
-    }
-    
-    // For regular shifts, both check-in and check-out times must be present
-    return (day.firstCheckIn !== null && day.lastCheckOut !== null);
   };
 
   const handleApproveAllForEmployee = (employeeIndex: number) => {
