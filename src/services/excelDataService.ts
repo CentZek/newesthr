@@ -468,6 +468,7 @@ export const getProcessedEmployees = async (fileId: string): Promise<EmployeeRec
           }
 
           return {
+            id: day.id, // Include the record ID from the database
             date: day.date,
             firstCheckIn: day.first_check_in ? new Date(day.first_check_in) : null,
             lastCheckOut: day.last_check_out ? new Date(day.last_check_out) : null,
@@ -489,6 +490,9 @@ export const getProcessedEmployees = async (fileId: string): Promise<EmployeeRec
             hasMultipleRecords: allTimeRecords.length > 1
           };
         });
+        
+        // Sort days by date to ensure consistent order
+        days.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         return {
           employeeNumber: emp.employee_number,

@@ -165,6 +165,7 @@ export const addManualEntryToRecords = (
   
   // Create daily record
   const newDay: DailyRecord = {
+    id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, // Generate a temporary ID
     date,
     firstCheckIn: firstCheckIn,
     lastCheckOut: lastCheckOut,
@@ -230,6 +231,11 @@ export const addManualEntryToRecords = (
       newRecords[employeeIndex].days.push(newDay);
       newRecords[employeeIndex].totalDays += 1;
     }
+    
+    // Sort days by date for consistent ordering
+    newRecords[employeeIndex].days.sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
     
     // Sort days by date
     newRecords[employeeIndex].days.sort((a, b) => a.date.localeCompare(b.date));

@@ -246,9 +246,16 @@ function HrPage() {
     toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
   };
 
-  const handleEditTime = (employeeIndex: number, dayIndex: number, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => {
+  const handleEditTime = (employeeIndex: number, dayId: string, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => {
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
+      // Find the day with the matching ID
+      const dayIndex = newRecords[employeeIndex].days.findIndex(d => d.id === dayId);
+      if (dayIndex === -1) {
+        console.error(`Day with ID ${dayId} not found for employee ${employeeIndex}`);
+        return prev; // Return previous state if day not found
+      }
+      
       const day = newRecords[employeeIndex].days[dayIndex];
       
       // If notes is provided and it's not "OFF-DAY", it's a leave request

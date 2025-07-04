@@ -16,7 +16,7 @@ interface EmployeeListProps {
   handleToggleApproveDay: (employeeIndex: number, dayIndex: number) => void;
   handleApproveAllForEmployee: (employeeIndex: number) => void;
   handleApplyPenalty: (employeeIndex: number, dayIndex: number, penaltyMinutes: number) => void;
-  handleEditTime: (employeeIndex: number, dayIndex: number, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => void;
+  handleEditTime: (employeeIndex: number, dayId: string, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => void;
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({
@@ -26,7 +26,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
   const [timeEditModalOpen, setTimeEditModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
   const [expandedRawData, setExpandedRawData] = useState<{empIndex: number, dayIndex: number} | null>(null);
   
   // State for approve all for employee confirmation
@@ -45,9 +45,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     setPenaltyModalOpen(true);
   };
 
-  const openTimeEditModal = (empIndex: number, dayIndex: number) => {
+  const openTimeEditModal = (empIndex: number, dayId: string) => {
     setSelectedEmployee(empIndex);
-    setSelectedDay(dayIndex);
+    setSelectedDayId(dayId);
     setTimeEditModalOpen(true);
   };
 
@@ -296,10 +296,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <button onClick={() => openTimeEditModal(empIndex, dayIndex)} className={`p-1 rounded-full ${day.missingCheckIn || day.missingCheckOut || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`}>
               <PenSquare className="w-5 h-5" />
             </button>
-            <button onClick={() => openPenaltyModal(empIndex, dayIndex)} className={`p-1 rounded-full text-gray-600 hover:bg-gray-100 ${isOffDay || isLeaveDay ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isOffDay || isLeaveDay}>
+            <button onClick={() => openTimeEditModal(empIndex, day.id || '')} className={`p-1 rounded-full ${hasMissingRecords || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`} title={wasCorrected ? "Edit time (Fixed records)" : "Edit Time"}>
               <AlertTriangle className="w-5 h-5" />
             </button>
-            <button 
+            <button onClick={() => openTimeEditModal(empIndex, day.id || '')} className={`p-1 rounded-full ${hasMissingRecords || wasCorrected ? 'text-blue-600' : 'text-gray-600'} hover:bg-gray-100`}>
               onClick={(e) => confirmApproveDay(empIndex, dayIndex, e)}
               className={`p-1 rounded-full ${
                 day.approved 
@@ -627,21 +627,21 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       )}
       
       {timeEditModalOpen && selectedEmployee !== null && selectedDay !== null && (
-        <TimeEditModal
-          employee={employeeRecords[selectedEmployee]}
-          day={employeeRecords[selectedEmployee].days[selectedDay]}
-          onClose={() => {
-            setTimeEditModalOpen(false);
-            setSelectedEmployee(null);
-            setSelectedDay(null);
-          }}
-          onSave={(checkIn, checkOut, shiftType, notes) => {
-            handleEditTime(selectedEmployee, selectedDay, checkIn, checkOut, shiftType, notes);
-            setTimeEditModalOpen(false);
-            setSelectedEmployee(null);
-            setSelectedDay(null);
-          }}
-        />
+       <TimeEditModal
+         employee={employeeRecords[selectedEmployee]}
+         dayId={selectedDayId || ''}
+         onClose={() => {
+           setTimeEditModalOpen(false);
+           setSelectedEmployee(null);
+           setSelectedDayId(null);
+         }}
+         onSave={(dayId, checkIn, checkOut, shiftType, notes) => {
+           handleEditTime(selectedEmployee, dayId, checkIn, checkOut, shiftType, notes);
+           setTimeEditModalOpen(false);
+           setSelectedEmployee(null);
+           setSelectedDayId(null);
+         }}
+       />
       )}
       
       {/* Approve All Confirmation Dialog */}
