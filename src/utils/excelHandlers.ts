@@ -67,19 +67,6 @@ export const handleExcelFile = async (file: File): Promise<EmployeeRecord[]> => 
         });
 
         resolve(sortedData);
-        
-        // Sort each employee's days by date chronologically before returning
-        const sortedData = processedData.map(employee => {
-          const sortedDays = [...employee.days].sort((a, b) => 
-            new Date(a.date).getTime() - new Date(b.date).getTime()
-          );
-          return {
-            ...employee,
-            days: sortedDays
-          };
-        });
-        
-        resolve(sortedData);
       } catch (error) {
         reject(error);
       }
