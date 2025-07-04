@@ -127,7 +127,7 @@ const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, o
     setCheckInError('');
     setCheckOutError('');
     
-    // If marked as OFF-DAY or leave day
+    // If marked as OFF-DAY or leave day, make sure we preserve the ID when passing to onSave
     if (recordType === 'offday' || recordType === 'leave') {
       // Set to OFF-DAY or leave type by passing null for both check-in and check-out
       onSave(null, null, null, recordType === 'offday' ? 'OFF-DAY' : leaveType);

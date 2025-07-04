@@ -468,6 +468,7 @@ export const getProcessedEmployees = async (fileId: string): Promise<EmployeeRec
           }
 
           return {
+            id: day.id, // Include the unique ID from the database
             date: day.date,
             firstCheckIn: day.first_check_in ? new Date(day.first_check_in) : null,
             lastCheckOut: day.last_check_out ? new Date(day.last_check_out) : null,

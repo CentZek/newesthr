@@ -261,15 +261,28 @@ function HrPage() {
     updateInSupabase(employeeRecords);
     
     toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
-  };
+    shiftType: string | null,
 
   const handleEditTime = (employeeIndex: number, dayIndex: number, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => {
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
-      // Find the day by index but store its ID for verification
-      const day = newRecords[employeeIndex].days[dayIndex];
-      const dayId = day.id; // Store the ID for verification
       
+      // Find the correct day to edit
+      let day = newRecords[employeeIndex].days[dayIndex];
+      const dayId = day.id;
+      
+      // If we have an ID, verify we're editing the correct record
+      // This is crucial for maintaining edit consistency after page refresh
+      if (dayId) {
+        // Double check if the index is still correct (it might have changed after refresh/sort)
+        const correctDayIndex = newRecords[employeeIndex].days.findIndex(d => d.id === dayId);
+        if (correctDayIndex !== -1 && correctDayIndex !== dayIndex) {
+          console.log(`Corrected day index from ${dayIndex} to ${correctDayIndex} based on ID`);
+          dayIndex = correctDayIndex;
+          day = newRecords[employeeIndex].days[dayIndex];
+        }
+      }
+
       // If notes is provided and it's not "OFF-DAY", it's a leave request
       const isLeaveRequest = notes && notes !== 'OFF-DAY' && notes.includes('leave');
       

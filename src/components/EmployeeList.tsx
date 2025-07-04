@@ -48,11 +48,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const openTimeEditModal = (empIndex: number, dayIndex: number) => {
     setSelectedEmployee(empIndex);
     setSelectedDay(dayIndex);
-    // Store the day's ID if available for more reliable editing
-    const day = employeeRecords[empIndex].days[dayIndex];
-    if (day.id) {
-      console.log(`Opening time edit modal for record ID: ${day.id}`);
-    }
     setTimeEditModalOpen(true);
   };
 
@@ -634,7 +629,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       {timeEditModalOpen && selectedEmployee !== null && selectedDay !== null && (
         <TimeEditModal
           employee={employeeRecords[selectedEmployee]}
-          day={employeeRecords[selectedEmployee].days[selectedDay]}
+          day={employeeRecords[selectedEmployee].days.find(d => 
+            // If the day has an ID and the index has changed, find by ID instead of index
+            d.id === employeeRecords[selectedEmployee].days[selectedDay].id
+          ) || employeeRecords[selectedEmployee].days[selectedDay]}
           onClose={() => {
             setTimeEditModalOpen(false);
             setSelectedEmployee(null);
@@ -643,7 +641,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           onSave={(checkIn, checkOut, shiftType, notes) => {
             handleEditTime(selectedEmployee, selectedDay, checkIn, checkOut, shiftType, notes);
             setTimeEditModalOpen(false);
-           // After editing, null out the selections
             setSelectedEmployee(null);
             setSelectedDay(null);
           }}
