@@ -50,10 +50,7 @@ const AnimatedClock: React.FC = () => {
 
   // Generate hour markers
   const hourMarkers = [];
-  for (let i = 0; i < 12; i++) {
-    // Skip marker at 12 o'clock position (0 degrees) to remove the unwanted mark
-    if (i === 0) continue;
-    
+  for (let i = 1; i < 12; i++) {
     const angle = i * 30; // 30 degrees per hour
     const isMainHour = i % 3 === 0; // Highlight 12, 3, 6, 9
     hourMarkers.push(
@@ -63,7 +60,9 @@ const AnimatedClock: React.FC = () => {
         style={{
           transform: `rotate(${angle}deg) translate(0, -35%)`,
           top: '12%',
-          left: isMainHour ? 'calc(50% - 0.5px)' : 'calc(50% - 0.25px)'
+          boxShadow: '0 0 3px rgba(0,0,0,0.1)',
+          boxShadow: '0 0 5px rgba(255,0,0,0.2)',
+          transformOrigin: 'bottom center'
         }}
       ></div>
     );
@@ -90,8 +89,8 @@ const AnimatedClock: React.FC = () => {
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full" 
         style={{ transform: 'translateZ(4px)' }}>
         
-        {/* Clock markings circle */}
-        <div className="absolute inset-1 rounded-full border-4 border-[#e0e5ff] opacity-30">
+        {/* Clock markings circle - removed the top border */}
+        <div className="absolute inset-1 rounded-full border-[4px] border-[#e0e5ff] opacity-30" style={{ borderTop: 'none' }}>
           {/* Hour markers rendered inside this circle */}
           {hourMarkers}
         </div>
