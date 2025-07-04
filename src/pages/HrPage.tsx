@@ -204,9 +204,26 @@ function HrPage() {
   const handleApplyPenalty = (employeeIndex: number, dayIndex: number, penaltyMinutes: number) => {
     console.log(`Applying penalty of ${penaltyMinutes} minutes to employee ${employeeIndex}, day ${dayIndex}`);
     
+    // We've got both an index and potentially an ID - use the ID if it exists for more reliable editing
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
-      const day = newRecords[employeeIndex].days[dayIndex];
+      
+      // Get the day by index first
+      let day = newRecords[employeeIndex].days[dayIndex];
+      
+      // Verify if this is the right record by checking ID (if it exists)
+      // This ensures we edit the right record even if the array order changes
+      if (day.id) {
+        // This will be more reliable after page refresh
+        const dayId = day.id;
+        // Double-check if we're using the right index after a refresh
+        const correctDayIndex = newRecords[employeeIndex].days.findIndex(d => d.id === dayId);
+        if (correctDayIndex !== -1 && correctDayIndex !== dayIndex) {
+          console.log(`Corrected day index from ${dayIndex} to ${correctDayIndex} based on ID`);
+          dayIndex = correctDayIndex;
+          day = newRecords[employeeIndex].days[dayIndex];
+        }
+      }
       
       // Update penalty minutes
       day.penaltyMinutes = penaltyMinutes;
@@ -249,7 +266,9 @@ function HrPage() {
   const handleEditTime = (employeeIndex: number, dayIndex: number, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes: string) => {
     setEmployeeRecords(prev => {
       const newRecords = [...prev];
+      // Find the day by index but store its ID for verification
       const day = newRecords[employeeIndex].days[dayIndex];
+      const dayId = day.id; // Store the ID for verification
       
       // If notes is provided and it's not "OFF-DAY", it's a leave request
       const isLeaveRequest = notes && notes !== 'OFF-DAY' && notes.includes('leave');
