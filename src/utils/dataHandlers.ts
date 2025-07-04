@@ -234,6 +234,9 @@ export const addManualEntryToRecords = (
     // Sort days by date
     newRecords[employeeIndex].days.sort((a, b) => a.date.localeCompare(b.date));
     
+    // Sort days by date
+    newRecords[employeeIndex].days.sort((a, b) => a.date.localeCompare(b.date));
+    
     newRecords[employeeIndex].expanded = true; // Auto-expand to show the new entry
   } else {
     // Employee doesn't exist in current records, create a new entry

@@ -98,8 +98,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const employees = await getProcessedEmployees(storedFileId);
           
           if (employees && employees.length > 0) {
+            // Ensure days are sorted by date for each employee
+            const sortedEmployees = employees.map(employee => ({
+              ...employee,
+              days: [...employee.days].sort((a, b) => a.date.localeCompare(b.date))
+            }));
+            
             setActiveFileId(storedFileId);
-            setEmployeeRecords(employees);
+            setEmployeeRecords(sortedEmployees);
             setHasUploadedFile(true);
             setTotalEmployees(employees.length);
             setTotalDays(employees.reduce((sum, emp) => sum + emp.days.length, 0));
@@ -140,7 +146,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const employees = await getProcessedEmployees(activeFile.fileId);
           
           if (employees && employees.length > 0) {
-            setEmployeeRecords(employees);
+            // Ensure days are sorted by date for each employee
+            const sortedEmployees = employees.map(employee => ({
+              ...employee,
+              days: [...employee.days].sort((a, b) => a.date.localeCompare(b.date))
+            }));
+            
+            setEmployeeRecords(sortedEmployees);
             setHasUploadedFile(true);
           }
         }
