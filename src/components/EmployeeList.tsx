@@ -51,7 +51,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const openPenaltyModal = (empIndex: number, dayIndex: number) => {
     const date = employeeRecords[empIndex].days[dayIndex].date;
     setSelectedEmployee(empIndex);
-    setSelectedDay(dayIndex);
+    setSelectedDay(dayIndex); // Keep for backward compatibility
     setSelectedDate(date);
     setPenaltyModalOpen(true);
   };
@@ -59,7 +59,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const toggleRawData = (empIndex: number, dayIndex: number) => {
     if (expandedRawData && expandedRawData.empIndex === empIndex && expandedRawData.dayIndex === dayIndex) {
       setExpandedRawData(null);
-    } else {
+    setSelectedDay(dayIndex); // Keep for backward compatibility
       setExpandedRawData({empIndex, dayIndex});
     }
   };
@@ -620,15 +620,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       {penaltyModalOpen && selectedEmployee !== null && selectedDay !== null && (
         <PenaltyModal 
           employee={employeeRecords[selectedEmployee]}
-          day={selectedDate ? employeeRecords[selectedEmployee].days.find(day => day.date === selectedDate) || employeeRecords[selectedEmployee].days[selectedDay] : employeeRecords[selectedEmployee].days[selectedDay]}
+          day={selectedDate ? employeeRecords[selectedEmployee].days.find(day => day.date === selectedDate) : employeeRecords[selectedEmployee].days[selectedDay]}
           onClose={() => setPenaltyModalOpen(false)}
           onApply={(penaltyMinutes) => {
             if (selectedDate) {
               const dayIndex = employeeRecords[selectedEmployee].days.findIndex(day => day.date === selectedDate);
               if (dayIndex !== -1) {
                 handleApplyPenalty(selectedEmployee, dayIndex, penaltyMinutes);
-              } else {
-                handleApplyPenalty(selectedEmployee, selectedDay, penaltyMinutes);
               }
             } else {
               handleApplyPenalty(selectedEmployee, selectedDay, penaltyMinutes);
@@ -644,7 +642,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       {timeEditModalOpen && selectedEmployee !== null && selectedDay !== null && (
         <TimeEditModal
           employee={employeeRecords[selectedEmployee]}
-          day={selectedDate ? employeeRecords[selectedEmployee].days.find(day => day.date === selectedDate) || employeeRecords[selectedEmployee].days[selectedDay] : employeeRecords[selectedEmployee].days[selectedDay]}
+          day={selectedDate ? employeeRecords[selectedEmployee].days.find(day => day.date === selectedDate) : employeeRecords[selectedEmployee].days[selectedDay]}
           onClose={() => {
             setTimeEditModalOpen(false);
             setSelectedEmployee(null);
@@ -656,8 +654,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               const dayIndex = employeeRecords[selectedEmployee].days.findIndex(day => day.date === selectedDate);
               if (dayIndex !== -1) {
                 handleEditTime(selectedEmployee, dayIndex, checkIn, checkOut, shiftType, notes);
-              } else {
-                handleEditTime(selectedEmployee, selectedDay, checkIn, checkOut, shiftType, notes);
               }
             } else {
               handleEditTime(selectedEmployee, selectedDay, checkIn, checkOut, shiftType, notes);
