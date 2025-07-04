@@ -43,6 +43,7 @@ function HrPage() {
     totalEmployees, setTotalEmployees,
     totalDays, setTotalDays,
     saveToSupabase, // Use the new Supabase functions
+    updateInSupabase, // Added this to explicitly save changes
     clearData, // Updated clear data function
     isLoading: isContextLoading,
     isResetting, // Use global reset state from context
@@ -227,6 +228,9 @@ function HrPage() {
       return newRecords;
     });
     
+    // Directly update in Supabase to ensure changes persist after refresh
+    updateInSupabase(employeeRecords);
+    
     toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
   };
 
@@ -314,6 +318,9 @@ function HrPage() {
       
       return newRecords;
     });
+
+    // Directly update in Supabase to ensure changes persist after refresh
+    updateInSupabase(employeeRecords);
     
     toast.success('Time records updated successfully');
   };
@@ -554,8 +561,8 @@ function HrPage() {
       earlyLeave: false,
       excessiveOvertime: shiftData.hoursWorked > 9.5,
       penaltyMinutes: 0,
-      displayCheckIn: DISPLAY_SHIFT_TIMES[shiftData.shiftType].startTime,
-      displayCheckOut: DISPLAY_SHIFT_TIMES[shiftData.shiftType].endTime,
+      displayCheckIn: DISPLAY_SHIFT_TIMES[shiftData.shiftType as keyof typeof DISPLAY_SHIFT_TIMES].startTime,
+      displayCheckOut: DISPLAY_SHIFT_TIMES[shiftData.shiftType as keyof typeof DISPLAY_SHIFT_TIMES].endTime,
       working_week_start: shiftData.date // Set working_week_start for proper grouping
     };
     
@@ -596,11 +603,6 @@ function HrPage() {
         expanded: true // Auto-expand to show the new entry
       });
     }
-    
-    // Sort days chronologically to maintain order
-    updatedRecords[employeeIndex].days.sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
     
     // Update the state with new records
     setEmployeeRecords(updatedRecords);
