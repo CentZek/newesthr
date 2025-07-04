@@ -8,10 +8,10 @@ interface TimeEditModalProps {
   employee: EmployeeRecord;
   dayId: string;
   onClose: () => void;
-  dayId,
+  onSave: (dayId: string, checkIn: Date | null, checkOut: Date | null, shiftType: string | null, notes?: string) => void;
 }
 
-const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, day, onClose, onSave }) => {
+const TimeEditModal: React.FC<TimeEditModalProps> = ({ employee, dayId, onClose, onSave }) => {
   // Find the day with the matching ID
   const day = employee.days.find(d => d.id === dayId);
   
