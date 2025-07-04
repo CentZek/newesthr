@@ -50,7 +50,7 @@ const AnimatedClock: React.FC = () => {
 
   // Generate hour markers
   const hourMarkers = [];
-  for (let i = 1; i < 12; i++) {
+  for (let i = 2; i < 12; i++) {
     const angle = i * 30; // 30 degrees per hour
     const isMainHour = i % 3 === 0; // Highlight 12, 3, 6, 9
     hourMarkers.push(
@@ -60,8 +60,6 @@ const AnimatedClock: React.FC = () => {
         style={{
           transform: `rotate(${angle}deg) translate(0, -35%)`,
           top: '12%',
-          boxShadow: '0 0 3px rgba(0,0,0,0.1)',
-          boxShadow: '0 0 5px rgba(255,0,0,0.2)',
           transformOrigin: 'bottom center'
         }}
       ></div>
@@ -89,8 +87,8 @@ const AnimatedClock: React.FC = () => {
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full" 
         style={{ transform: 'translateZ(4px)' }}>
         
-        {/* Clock markings circle - removed the top border */}
-        <div className="absolute inset-1 rounded-full border-[4px] border-[#e0e5ff] opacity-30" style={{ borderTop: 'none' }}>
+        {/* Remove the border circle completely to eliminate any top marks */}
+        <div className="absolute inset-1 rounded-full opacity-30" style={{ borderBottom: '4px solid #e0e5ff', borderLeft: '4px solid #e0e5ff', borderRight: '4px solid #e0e5ff', borderTop: 'none' }}>
           {/* Hour markers rendered inside this circle */}
           {hourMarkers}
         </div>
@@ -110,11 +108,11 @@ const AnimatedClock: React.FC = () => {
           className="absolute z-10"
           style={{ 
             width: '4px',
-            height: '25%', 
+            height: '24%', 
             bottom: '50%',
             left: 'calc(50% - 2px)',
             transform: `rotate(${hoursDegrees}deg)`,
-            transformOrigin: 'bottom center',
+            transformOrigin: '50% 100%',
             background: 'linear-gradient(to top, #1a237e, #3949ab)',
             borderRadius: '2px 2px 0 0',
             boxShadow: '0 0 5px rgba(0,0,0,0.2)'
@@ -126,11 +124,11 @@ const AnimatedClock: React.FC = () => {
           className="absolute z-15"
           style={{ 
             width: '3px',
-            height: '35%',
+            height: '34%',
             bottom: '50%',
             left: 'calc(50% - 1.5px)',
             transform: `rotate(${minutesDegrees}deg)`,
-            transformOrigin: 'bottom center',
+            transformOrigin: '50% 100%',
             background: 'linear-gradient(to top, #283593, #5c6bc0)',
             borderRadius: '1.5px 1.5px 0 0',
             boxShadow: '0 0 3px rgba(0,0,0,0.1)'
@@ -142,11 +140,11 @@ const AnimatedClock: React.FC = () => {
           className="absolute z-20"
           style={{ 
             width: '1.5px',
-            height: '40%',
+            height: '39%',
             bottom: '50%',
             left: 'calc(50% - 0.75px)',
             transform: `rotate(${secondsDegrees}deg)`,
-            transformOrigin: 'bottom center',
+            transformOrigin: '50% 100%',
             background: '#ff5252',
             borderRadius: '1px',
             boxShadow: '0 0 5px rgba(255,0,0,0.2)'
