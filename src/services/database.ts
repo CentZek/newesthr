@@ -125,11 +125,12 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         // If it's a leave day, add 9 hours to the employee's total
         if (isLeaveDay) {
           // Add hours to total
-          employee.total_hours += 9.0;
+          // For unpaid leave, add 0 hours; for other leaves add 9 hours
+          employee.total_hours += record.notes === 'unpaid-leave' ? 0.0 : 9.0;
           
           // Track hours by date (9.0 hours for leave days)
           if (!employee.hours_by_date[record.working_week_start]) {
-            employee.hours_by_date[record.working_week_start] = 9.0;
+            employee.hours_by_date[record.working_week_start] = record.notes === 'unpaid-leave' ? 0.0 : 9.0;
           }
         }
         
@@ -160,11 +161,12 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         // If it's a leave day, add 9 hours to the employee's total
         if (isLeaveDay) {
           // Add hours to total
-          employee.total_hours += 9.0;
+          // For unpaid leave, add 0 hours; for other leaves add 9 hours
+          employee.total_hours += record.notes === 'unpaid-leave' ? 0.0 : 9.0;
           
           // Track hours by date (9.0 hours for leave days)
           if (!employee.hours_by_date[date]) {
-            employee.hours_by_date[date] = 9.0;
+            employee.hours_by_date[date] = record.notes === 'unpaid-leave' ? 0.0 : 9.0;
           }
         }
         
@@ -275,11 +277,12 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         // If it's a leave day, add 9 hours to the employee's total
         if (isLeaveDay) {
           // Add hours to total
-          employee.total_hours += 9.0;
+          // For unpaid leave, add 0 hours; for other leaves add 9 hours
+          employee.total_hours += record.notes === 'unpaid-leave' ? 0.0 : 9.0;
           
           // Track hours by date (9.0 hours for leave days)
           if (!employee.hours_by_date[record.working_week_start]) {
-            employee.hours_by_date[record.working_week_start] = 9.0;
+            employee.hours_by_date[record.working_week_start] = record.notes === 'unpaid-leave' ? 0.0 : 9.0;
           }
         }
         
@@ -297,11 +300,12 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         // If it's a leave day, add 9 hours to the employee's total
         if (isLeaveDay) {
           // Add hours to total
-          employee.total_hours += 9.0;
+          // For unpaid leave, add 0 hours; for other leaves add 9 hours
+          employee.total_hours += record.notes === 'unpaid-leave' ? 0.0 : 9.0;
           
           // Track hours by date (9.0 hours for leave days)
           if (!employee.hours_by_date[date]) {
-            employee.hours_by_date[date] = 9.0;
+            employee.hours_by_date[date] = record.notes === 'unpaid-leave' ? 0.0 : 9.0;
           }
         }
         
