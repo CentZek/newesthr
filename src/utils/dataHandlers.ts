@@ -149,8 +149,7 @@ export const addManualEntryToRecords = (
     displayCheckInValue = 'OFF-DAY';
     displayCheckOutValue = 'OFF-DAY';
   } else if (dailyRecordType === 'leave') {
-    // Unpaid leave gets 0 hours, all other leave types get 9 hours
-    hoursWorked = leaveType === 'unpaid-leave' ? 0.0 : 9.0;
+    hoursWorked = 9.0; // Leave days get 9 hours
     actualShiftType = 'off_day'; // Store as off_day type
     notesValue = leaveType || 'annual-leave';
     displayCheckInValue = leaveType || 'annual-leave';

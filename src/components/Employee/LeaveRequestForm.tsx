@@ -27,7 +27,6 @@ const LeaveRequestForm: React.FC<LeaveRequestFormProps> = ({ employeeId, onClose
     { value: 'bereavement-leave', label: 'Bereavement Leave' },
     { value: 'maternity-leave', label: 'Maternity Leave' },
     { value: 'paternity-leave', label: 'Paternity Leave' },
-    { value: 'unpaid-leave', label: 'Unpaid Leave' },
   ];
 
   const validateForm = () => {

@@ -70,8 +70,6 @@ const LeaveCalendarView: React.FC<LeaveCalendarViewProps> = ({
         return 'bg-pink-100 border-pink-300';
       case 'paternity-leave':
         return 'bg-blue-100 border-blue-300';
-      case 'unpaid-leave':
-        return 'bg-orange-100 border-orange-300';
       default:
         return 'bg-blue-100 border-blue-300';
     }

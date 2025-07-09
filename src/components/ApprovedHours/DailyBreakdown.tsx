@@ -73,9 +73,9 @@ const DailyBreakdown: React.FC<DailyBreakdownProps> = ({ isLoading, records, dou
   };
 
   // Helper function to format leave type
-  const formatLeaveType = (type: string): string => {
-    if (!type || type === 'OFF-DAY') return 'OFF-DAY';
-    return type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  const formatLeaveType = (leaveType: string): string => {
+    if (!leaveType || leaveType === 'OFF-DAY') return 'OFF-DAY';
+    return leaveType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   if (isLoading) {
@@ -183,16 +183,16 @@ const DailyBreakdown: React.FC<DailyBreakdownProps> = ({ isLoading, records, dou
                 </div>
                 <div className="text-gray-700">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    isLeaveDay ? (leaveType === 'unpaid-leave' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800') : 'bg-red-100 text-red-800'
+                    isLeaveDay ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
                   }`}>
                     {formatLeaveType(leaveType)}
                   </span>
                 </div>
                 <div className="font-bold text-gray-800">
-                  {isLeaveDay ? (leaveType === 'unpaid-leave' ? "0.00" : "9.00") : "0.00"}
+                  {isLeaveDay ? "9.00" : "0.00"}
                 </div>
                 <div className="font-bold text-gray-800">
-                  {isDoubleTime ? (isLeaveDay && leaveType !== 'unpaid-leave' ? "9.00" : "0.00") : "0.00"}
+                  {isDoubleTime ? (isLeaveDay ? "9.00" : "0.00") : "0.00"}
                 </div>
                 <div>
                   <span className="flex items-center text-green-600">

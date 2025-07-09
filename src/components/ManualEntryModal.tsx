@@ -899,13 +899,12 @@ const ManualEntryModal: React.FC<ManualEntryModalProps> = ({
                   <option value="bereavement-leave">Bereavement Leave</option>
                   <option value="maternity-leave">Maternity Leave</option>
                   <option value="paternity-leave">Paternity Leave</option>
-                  <option value="unpaid-leave">Unpaid Leave</option>
                 </select>
                 {errors.leaveType && <p className="mt-1 text-xs text-red-600">{errors.leaveType}</p>}
                 
                 <div className="bg-green-50 border border-green-100 rounded-md p-3 mt-3 text-sm text-green-700 flex items-center">
                   <Info className="w-4 h-4 mr-2 flex-shrink-0 text-green-500" />
-                  <p>Leave days are credited with 9 hours for payroll calculations, except Unpaid Leave which gets 0 hours.</p>
+                  <p>Leave days are credited with 9 hours for payroll calculations.</p>
                 </div>
               </div>
             </div>

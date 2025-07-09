@@ -152,8 +152,6 @@ const LeaveCalendar: React.FC<LeaveCalendarProps> = ({ employeeId, year, month }
         return 'bg-blue-100 text-blue-800';
       case 'annual-leave':
         return 'bg-green-100 text-green-800';
-      case 'unpaid-leave':
-        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }

@@ -13,8 +13,7 @@ const LEAVE_ENTITLEMENTS = {
   'marriage-leave': { days: 5, color: 'bg-purple-100 text-purple-800', icon: <Calendar className="h-4 w-4" /> },
   'bereavement-leave': { days: null, color: 'bg-gray-100 text-gray-800', icon: <Info className="h-4 w-4" /> },
   'maternity-leave': { days: 98, color: 'bg-pink-100 text-pink-800', icon: <Calendar className="h-4 w-4" /> },
-  'paternity-leave': { days: 2, color: 'bg-blue-100 text-blue-800', icon: <Calendar className="h-4 w-4" /> },
-  'unpaid-leave': { days: 0, color: 'bg-orange-100 text-orange-800', icon: <Calendar className="h-4 w-4" /> }
+  'paternity-leave': { days: 2, color: 'bg-blue-100 text-blue-800', icon: <Calendar className="h-4 w-4" /> }
 };
 
 const LeaveTypeOverview: React.FC = () => {
