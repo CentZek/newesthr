@@ -96,6 +96,8 @@ const LeaveRequestList: React.FC<LeaveRequestListProps> = ({ employeeId, onNewRe
         return 'bg-pink-100 text-pink-800';
       case 'paternity-leave':
         return 'bg-blue-100 text-blue-800';
+      case 'unpaid-leave':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-blue-100 text-blue-800';
     }

@@ -21,7 +21,8 @@ const LEAVE_ENTITLEMENTS: Record<string, number | null> = {
   'marriage-leave': 5,
   'bereavement-leave': null,
   'maternity-leave': 98,
-  'paternity-leave': 2
+  'paternity-leave': 2,
+  'unpaid-leave': 0 // Unpaid leave gets 0 hours credit
 };
 
 const LeaveStatistics: React.FC<LeaveStatisticsProps> = ({ employeeId, year }) => {
