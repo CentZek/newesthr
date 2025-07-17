@@ -42,6 +42,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   const openTimeEditModal = (empIndex: number, dayIndex: number) => {
     const date = employeeRecords[empIndex].days[dayIndex].date;
+    console.log('Opening time edit modal for date:', date);
     setSelectedEmployee(empIndex);
     setSelectedDay(dayIndex);
     setSelectedDate(date);
@@ -50,7 +51,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   const openPenaltyModal = (empIndex: number, dayIndex: number) => {
     const date = employeeRecords[empIndex].days[dayIndex].date;
+    console.log('Opening penalty modal for date:', date);
     setSelectedEmployee(empIndex);
+    setSelectedDay(dayIndex);
     setSelectedDate(date);
     setPenaltyModalOpen(true);
   };
