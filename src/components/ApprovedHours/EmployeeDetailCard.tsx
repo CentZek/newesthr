@@ -78,7 +78,21 @@ const EmployeeDetailCard: React.FC<EmployeeDetailCardProps> = ({ employee, doubl
                   {format(new Date(date), 'EEE, MMM d, yyyy')}
                 </span>
                 <span className="font-bold text-amber-600">
-                  {(employee.hours_by_date?.[date] || 0).toFixed(2)} × 2 = {((employee.hours_by_date?.[date] || 0) * 2).toFixed(2)} hrs
+                  {(() => {
+                    const hoursWorked = employee.hours_by_date?.[date] || 0;
+                    let bonusHours = 0;
+                    
+                    // Apply the same capping logic as in the database service
+                    if (hoursWorked <= 9) {
+                      bonusHours = hoursWorked;
+                    } else {
+                      bonusHours = Math.max(0, 18 - hoursWorked);
+                    }
+                    
+                    const totalCredited = hoursWorked + bonusHours;
+                    
+                    return `${hoursWorked.toFixed(2)} + ${bonusHours.toFixed(2)} = ${totalCredited.toFixed(2)} hrs`;
+                  })()}
                 </span>
               </div>
             ))}
