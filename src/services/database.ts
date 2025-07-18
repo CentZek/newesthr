@@ -127,10 +127,8 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
           // Add hours to total
           employee.total_hours += 9.0;
           
-          // Track hours by date (9.0 hours for leave days)
-          if (!employee.hours_by_date[record.working_week_start]) {
-            employee.hours_by_date[record.working_week_start] = 9.0;
-          }
+          // Do NOT add leave hours to hours_by_date - leave days should not count for double-time
+          // hours_by_date should only contain actual worked hours
         }
         
         // If it's an OFF-DAY, add to off_days set
@@ -162,10 +160,8 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
           // Add hours to total
           employee.total_hours += 9.0;
           
-          // Track hours by date (9.0 hours for leave days)
-          if (!employee.hours_by_date[date]) {
-            employee.hours_by_date[date] = 9.0;
-          }
+          // Do NOT add leave hours to hours_by_date - leave days should not count for double-time
+          // hours_by_date should only contain actual worked hours
         }
         
         // If it's an OFF-DAY, add to off_days set
@@ -277,10 +273,8 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
           // Add hours to total
           employee.total_hours += 9.0;
           
-          // Track hours by date (9.0 hours for leave days)
-          if (!employee.hours_by_date[record.working_week_start]) {
-            employee.hours_by_date[record.working_week_start] = 9.0;
-          }
+          // Do NOT add leave hours to hours_by_date - leave days should not count for double-time
+          // hours_by_date should only contain actual worked hours
         }
         
         // If it's an OFF-DAY, add to off_days set
@@ -299,10 +293,8 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
           // Add hours to total
           employee.total_hours += 9.0;
           
-          // Track hours by date (9.0 hours for leave days)
-          if (!employee.hours_by_date[date]) {
-            employee.hours_by_date[date] = 9.0;
-          }
+          // Do NOT add leave hours to hours_by_date - leave days should not count for double-time
+          // hours_by_date should only contain actual worked hours
         }
         
         // If it's an OFF-DAY, add to off_days set
@@ -356,7 +348,6 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
     const result = Array.from(employeeSummary.values()).map(emp => {
       // Calculate double-time hours
       let doubleTimeHours = 0;
-      let regularHours = 0;
       const workingDates = Array.from(emp.working_week_dates);
       
       workingDates.forEach(dateStr => {
@@ -365,9 +356,21 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         const isDoubletime = doubleDays.includes(dateStr) || isFriday(parseISO(dateStr));
         
         if (isDoubletime) {
-          doubleTimeHours += hours; // This is the bonus hours
+          let bonusHoursForThisDay = 0;
+          // If actual hours worked are 9 or less, the bonus is the actual hours (effectively doubling them)
+          if (hours <= 9) {
+            bonusHoursForThisDay = hours;
+          } else {
+            // If actual hours worked are more than 9, the bonus is calculated to cap the total at 18.
+            // The total credited hours for this day should be 18.
+            // Since 'hours' are already included in 'emp.total_hours' (regular hours),
+            // the bonus needed is (18 - actual_hours).
+            bonusHoursForThisDay = 18 - hours;
+            // Ensure bonusHoursForThisDay is not negative (e.g., if actual hours > 18)
+            bonusHoursForThisDay = Math.max(0, bonusHoursForThisDay);
+          }
+          doubleTimeHours += bonusHoursForThisDay;
         }
-        regularHours += hours; // Always add to regular hours
       });
       
       // Get the count of off days
@@ -381,7 +384,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         total_days: emp.total_days.size,
         working_days: workingDays,
         off_days_count: offDaysCount,
-        total_hours: parseFloat(regularHours.toFixed(2)),
+        total_hours: parseFloat(emp.total_hours.toFixed(2)),
         double_time_hours: parseFloat(doubleTimeHours.toFixed(2)),
         working_week_dates: Array.from(emp.working_week_dates)
       };
