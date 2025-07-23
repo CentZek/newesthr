@@ -240,9 +240,6 @@ function HrPage() {
       return newRecords;
     });
     
-    // Directly update in Supabase to ensure changes persist after refresh
-    updateInSupabase(employeeRecords);
-    
     toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
   };
 
@@ -354,9 +351,6 @@ function HrPage() {
       return newRecords;
     });
 
-    // Directly update in Supabase to ensure changes persist after refresh
-    updateInSupabase(employeeRecords);
-    
     toast.success('Time records updated successfully');
   };
 
