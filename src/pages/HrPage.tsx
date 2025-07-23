@@ -307,7 +307,8 @@ function HrPage() {
       
       // If changing from OFF-DAY or leave, we need to update the notes and determine shift type
       if (day.notes === 'OFF-DAY' || isLeaveRequest) {
-        day.notes = 'Manual entry';
+        // Preserve the correct notes value (OFF-DAY or leave type)
+        // Don't overwrite with 'Manual entry' as it breaks the saveRecordsToDatabase logic
       }
       
       // Determine shift type if not already set or if explicitly provided
