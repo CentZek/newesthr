@@ -495,8 +495,7 @@ export const checkExistingTimeRecord = async (
       employeeId,
       shiftType,
       status,
-      workingWeekStart,
-      is_manual_entry: true
+      workingWeekStart
     });
 
     const { data, error } = await supabase
@@ -505,7 +504,6 @@ export const checkExistingTimeRecord = async (
       .eq('employee_id', employeeId)
       .eq('status', status) // IMPORTANT: Filter by status to prevent mix-ups
       .eq('working_week_start', workingWeekStart)
-      .eq('is_manual_entry', true)
       .maybeSingle();
 
     if (error) throw error;
