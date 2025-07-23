@@ -1160,16 +1160,28 @@ export const saveRecordsToDatabase = async (employeeRecords: EmployeeRecord[]): 
       try {
         // Skip if this is an OFF-DAY with no hours
         if (day.notes === 'OFF-DAY' && day.hoursWorked === 0) {
+          // Get employee ID first
+          const employeeId = await getEmployeeId(employee.employeeNumber);
+          
+          // Delete any existing check_in or check_out records for this employee and date
+          // to prevent conflicts with the OFF-DAY record
+          await supabase
+            .from('time_records')
+            .delete()
+            .eq('employee_id', employeeId)
+            .eq('working_week_start', day.date)
+            .neq('status', 'off_day'); // Only delete check_in/check_out, preserve existing off_day records
+          
           // Check if OFF-DAY record already exists
           const existingOffDayId = await checkExistingTimeRecord(
-            await getEmployeeId(employee.employeeNumber),
+            employeeId,
             'off_day',
             'off_day',
             day.date
           );
 
           const offDayData = {
-            employee_id: await getEmployeeId(employee.employeeNumber),
+            employee_id: employeeId,
             timestamp: `${day.date}T12:00:00`, // Use local date-time string
             status: 'off_day',
             shift_type: 'off_day',
@@ -1197,16 +1209,28 @@ export const saveRecordsToDatabase = async (employeeRecords: EmployeeRecord[]): 
         if (day.notes && day.notes !== 'OFF-DAY' && day.notes.includes('leave')) {
           const leaveType = day.notes; // Store the leave type
           
+          // Get employee ID first
+          const employeeId = await getEmployeeId(employee.employeeNumber);
+          
+          // Delete any existing check_in or check_out records for this employee and date
+          // to prevent conflicts with the leave record
+          await supabase
+            .from('time_records')
+            .delete()
+            .eq('employee_id', employeeId)
+            .eq('working_week_start', day.date)
+            .neq('status', 'off_day'); // Only delete check_in/check_out, preserve existing off_day records
+          
           // Check if leave record already exists
           const existingLeaveId = await checkExistingTimeRecord(
-            await getEmployeeId(employee.employeeNumber),
+            employeeId,
             'off_day',
             'off_day',
             day.date
           );
           
           const leaveData = {
-            employee_id: await getEmployeeId(employee.employeeNumber),
+            employee_id: employeeId,
             timestamp: `${day.date}T12:00:00`,
             status: 'off_day',
             shift_type: 'off_day',
