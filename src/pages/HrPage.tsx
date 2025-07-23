@@ -240,6 +240,9 @@ function HrPage() {
       return newRecords;
     });
     
+    // Directly update in Supabase to ensure changes persist after refresh
+    updateInSupabase(employeeRecords);
+    
     toast.success(`Penalty applied: ${penaltyMinutes} minutes (${(penaltyMinutes / 60).toFixed(2)} hours)`);
   };
 
@@ -304,8 +307,7 @@ function HrPage() {
       
       // If changing from OFF-DAY or leave, we need to update the notes and determine shift type
       if (day.notes === 'OFF-DAY' || isLeaveRequest) {
-        // Preserve the correct notes value (OFF-DAY or leave type)
-        // Don't overwrite with 'Manual entry' as it breaks the saveRecordsToDatabase logic
+        day.notes = 'Manual entry';
       }
       
       // Determine shift type if not already set or if explicitly provided
@@ -351,6 +353,9 @@ function HrPage() {
       return newRecords;
     });
 
+    // Directly update in Supabase to ensure changes persist after refresh
+    updateInSupabase(employeeRecords);
+    
     toast.success('Time records updated successfully');
   };
 
