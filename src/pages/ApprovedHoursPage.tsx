@@ -86,9 +86,9 @@ const ApprovedHoursPage: React.FC = () => {
         let start, end;
         
         if (filterMonth === "all") {
-          // Use a very wide date range for "all time" to ensure no records are excluded
-          start = '1900-01-01';
-          end = '2100-12-31';
+          // Use a large date range for "all time" (past year to future year)
+          start = safeFormat(subMonths(new Date(), 12), 'yyyy-MM-dd');
+          end = safeFormat(new Date(new Date().getFullYear() + 1, 11, 31), 'yyyy-MM-dd');
         } else if (filterMonth === "custom") {
           // Use the selected date range
           start = startDate;
@@ -109,15 +109,14 @@ const ApprovedHoursPage: React.FC = () => {
               end = safeFormat(endOfMonth(monthDate), 'yyyy-MM-dd');
             } else {
               // Use current month as fallback
-              // Use very wide range for invalid dates
-              start = '1900-01-01';
-              end = '2100-12-31';
+              start = safeFormat(startOfMonth(new Date()), 'yyyy-MM-dd');
+              end = safeFormat(endOfMonth(new Date()), 'yyyy-MM-dd');
             }
           } catch (error) {
             console.error('Error parsing filter month:', error);
-            // Use very wide range for parsing errors
-            start = '1900-01-01';
-            end = '2100-12-31';
+            // Use current month as fallback
+            start = safeFormat(startOfMonth(new Date()), 'yyyy-MM-dd');
+            end = safeFormat(endOfMonth(new Date()), 'yyyy-MM-dd');
           }
         }
         
@@ -141,30 +140,22 @@ const ApprovedHoursPage: React.FC = () => {
       try {
         let dateFilter = "";
         
-        console.log('ApprovedHours - filterMonth:', filterMonth, 'startDate:', startDate, 'endDate:', endDate);
-        
         if (filterMonth === "custom") {
           // Validate dates before setting the filter
           if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
             dateFilter = `${startDate}|${endDate}`;
           } else {
             console.warn('Invalid date range, using default filter');
-            // For invalid custom range, fall back to "All Time" (no filter)
-            dateFilter = "";
+            // Default to recent month if dates are invalid
+            const defaultStart = safeFormat(subMonths(new Date(), 1), 'yyyy-MM-dd');
+            const defaultEnd = safeFormat(new Date(), 'yyyy-MM-dd');
+            dateFilter = `${defaultStart}|${defaultEnd}`;
           }
         } else if (filterMonth !== "all") {
           dateFilter = filterMonth;
-        } else {
-          // Explicitly set empty for "all" to ensure no filtering
-          dateFilter = "";
         }
         
-        console.log('ApprovedHours - final dateFilter being sent:', JSON.stringify(dateFilter));
-        
         const { data, totalHoursSum } = await fetchApprovedHours(dateFilter);
-        
-        console.log('ApprovedHours - received data:', data?.length, 'employees, totalHoursSum:', totalHoursSum);
-        
         setAllEmployees(data); // Store all employees
         
         // Filter employees if specific employees are selected
@@ -203,8 +194,6 @@ const ApprovedHoursPage: React.FC = () => {
         setTotalDoubleTimeHours(doubleTimeHours);
         // FIXED: Double-time hours should be added as a bonus to regular hours
         setTotalPayableHours(regularHours + doubleTimeHours);
-        
-        console.log('ApprovedHours - final totals - regularHours:', regularHours, 'doubleTimeHours:', doubleTimeHours, 'totalPayable:', regularHours + doubleTimeHours);
       } catch (error) {
         console.error('Error loading approved hours:', error);
         toast.error('Failed to load approved hours data');
@@ -238,14 +227,14 @@ const ApprovedHoursPage: React.FC = () => {
           dateFilter = `${startDate}|${endDate}`;
         } else {
           console.warn('Invalid date range, using default filter');
-          // For invalid custom range, don't apply any filter (treat as "All Time")
-          dateFilter = '';
+          // Default to recent month if dates are invalid
+          const defaultStart = safeFormat(subMonths(new Date(), 1), 'yyyy-MM-dd');
+          const defaultEnd = safeFormat(new Date(), 'yyyy-MM-dd');
+          dateFilter = `${defaultStart}|${defaultEnd}`;
         }
       } else if (filterMonth !== "all") {
         dateFilter = filterMonth;
       }
-      
-      console.log('ApprovedHours - filterMonth:', filterMonth, 'dateFilter:', dateFilter);
       
       const { data: records } = await fetchEmployeeDetails(employeeId, dateFilter);
       setDailyRecords(records);
@@ -384,17 +373,16 @@ const ApprovedHoursPage: React.FC = () => {
       let start, end;
       
       if (filterMonth === "all") {
-        // For "All Time", don't apply any date filter at all
-        start = '';
-        end = '';
+        start = safeFormat(subMonths(new Date(), 12), 'yyyy-MM-dd');
+        end = safeFormat(new Date(new Date().getFullYear() + 1, 11, 31), 'yyyy-MM-dd');
       } else if (filterMonth === "custom") {
         if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
           start = startDate;
           end = endDate;
         } else {
-          // For invalid custom range, don't apply any date filter
-          start = '';
-          end = '';
+          // Use default range if dates are invalid
+          start = safeFormat(subMonths(new Date(), 1), 'yyyy-MM-dd');
+          end = safeFormat(new Date(), 'yyyy-MM-dd');
         }
       } else {
         try {
@@ -404,25 +392,19 @@ const ApprovedHoursPage: React.FC = () => {
             start = safeFormat(startOfMonth(monthDate), 'yyyy-MM-dd');
             end = safeFormat(endOfMonth(monthDate), 'yyyy-MM-dd');
           } else {
-            // For invalid month, don't apply any date filter
-            start = '';
-            end = '';
+            start = safeFormat(startOfMonth(new Date()), 'yyyy-MM-dd');
+            end = safeFormat(endOfMonth(new Date()), 'yyyy-MM-dd');
           }
         } catch (error) {
           console.error('Error parsing filter month:', error);
-          // For parsing errors, don't apply any date filter
-          start = '';
-          end = '';
+          start = safeFormat(startOfMonth(new Date()), 'yyyy-MM-dd');
+          end = safeFormat(endOfMonth(new Date()), 'yyyy-MM-dd');
         }
       }
       
-      // Only proceed if we have valid dates (for month/custom filters)
-      if (start && end && start !== '' && end !== '') {
+      // Only proceed if we have valid dates
+      if (start && end) {
         const days = await getDoubleTimeDays(start, end);
-        setDoubleDays(days);
-      } else {
-        // For "All Time", get double days for a very wide range
-        const days = await getDoubleTimeDays('1900-01-01', '2100-12-31');
         setDoubleDays(days);
         
         // Reload employee data if expanded
@@ -434,8 +416,10 @@ const ApprovedHoursPage: React.FC = () => {
             if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
               dateFilter = `${startDate}|${endDate}`;
             } else {
-              // For invalid custom range, don't apply any filter
-              dateFilter = '';
+              // Use default range if dates are invalid
+              const defaultStart = safeFormat(subMonths(new Date(), 1), 'yyyy-MM-dd');
+              const defaultEnd = safeFormat(new Date(), 'yyyy-MM-dd');
+              dateFilter = `${defaultStart}|${defaultEnd}`;
             }
           } else if (filterMonth !== "all") {
             dateFilter = filterMonth;
