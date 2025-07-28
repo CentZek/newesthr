@@ -19,30 +19,56 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
   try {
     console.log('fetchApprovedHours called with dateFilter:', JSON.stringify(dateFilter));
     
-    // Fetch approved records - keep original logic but ensure we get all relevant records
-    let query = supabase
-      .from('time_records')
-      .select(`
-        employee_id,
-        timestamp,
-        status,
-        exact_hours,
-        notes,
-        working_week_start,
-        employees (
-          id,
-          name,
-          employee_number
-        )
-      `)
-      .eq('approved', true)  // Only fetch approved records
-      .in('status', ['check_in', 'off_day']); // Keep original status filtering
+    // Determine if this is "All Time" (no filtering)
+    const isAllTime = !dateFilter || dateFilter.trim() === '' || dateFilter === 'all';
+    console.log('Is All Time filter:', isAllTime, 'dateFilter:', JSON.stringify(dateFilter));
     
-    // Apply date filter ONLY if provided and not empty
-    const shouldApplyDateFilter = dateFilter && dateFilter.trim() !== '' && dateFilter !== 'all';
-    console.log('Should apply date filter:', shouldApplyDateFilter, 'for dateFilter:', dateFilter);
+    let data, error;
     
-    if (shouldApplyDateFilter) {
+    if (isAllTime) {
+      // For "All Time", use a completely separate, simple query with no date filtering
+      console.log('Using ALL TIME query - no date restrictions');
+      const result = await supabase
+        .from('time_records')
+        .select(`
+          employee_id,
+          timestamp,
+          status,
+          exact_hours,
+          notes,
+          working_week_start,
+          employees (
+            id,
+            name,
+            employee_number
+          )
+        `)
+        .eq('approved', true)
+        .in('status', ['check_in', 'off_day']);
+      
+      data = result.data;
+      error = result.error;
+    } else {
+      // For specific date ranges, use the filtered query
+      console.log('Using FILTERED query for dateFilter:', dateFilter);
+      let query = supabase
+        .from('time_records')
+        .select(`
+          employee_id,
+          timestamp,
+          status,
+          exact_hours,
+          notes,
+          working_week_start,
+          employees (
+            id,
+            name,
+            employee_number
+          )
+        `)
+        .eq('approved', true)
+        .in('status', ['check_in', 'off_day']);
+      
       if (dateFilter.includes('|')) {
         // Custom date range: startDate|endDate
         const [startDate, endDate] = dateFilter.split('|');
@@ -51,7 +77,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
           query = query
             .gte('working_week_start', startDate)
             .lte('working_week_start', endDate);
-          console.log('Applied custom date range filter to working_week_start:', startDate, 'to', endDate);
+          console.log('Applied custom date range filter:', startDate, 'to', endDate);
         }
       } else {
         // Month filter: YYYY-MM
@@ -69,22 +95,22 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
               query = query
                 .gte('working_week_start', startStr)
                 .lte('working_week_start', endStr);
-              console.log('Applied month filter to working_week_start:', startStr, 'to', endStr);
+              console.log('Applied month filter:', startStr, 'to', endStr);
             }
           }
         } catch (error) {
           console.error('Error parsing month filter:', error);
         }
       }
-    } else {
-      console.log('NO DATE FILTER APPLIED - fetching ALL approved records');
+      
+      const result = await query;
+      data = result.data;
+      error = result.error;
     }
-    
-    const { data, error } = await query;
     
     if (error) throw error;
     
-    console.log('Raw data fetched:', data?.length, 'records');
+    console.log('Raw data fetched:', data?.length, 'records for', isAllTime ? 'ALL TIME' : `filter: ${dateFilter}`);
     
     // Group records by employee - keep original logic structure
     const employeeSummary = new Map();
@@ -168,7 +194,12 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
     // Calculate double-time hours for each employee
     let startDate, endDate;
     
-    if (dateFilter && dateFilter.trim() !== '') {
+    if (isAllTime) {
+      // For "All Time", use very wide range
+      startDate = '1900-01-01';
+      endDate = '2100-12-31';
+      console.log('Using wide range for double-time days calculation');
+    } else {
       if (dateFilter.includes('|')) {
         // Custom date range
         [startDate, endDate] = dateFilter.split('|');
@@ -182,22 +213,16 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
               startDate = format(startOfMonth(monthDate), 'yyyy-MM-dd');
               endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
             } else {
-              // Use very wide range if dates are invalid
               startDate = '1900-01-01';
               endDate = '2100-12-31';
             }
           }
         } catch (err) {
           console.error('Error parsing month filter:', err);
-          // Use very wide range if parsing fails
           startDate = '1900-01-01';
           endDate = '2100-12-31';
         }
       }
-    } else {
-      // Default to very wide range for "All Time"
-      startDate = '1900-01-01';
-      endDate = '2100-12-31';
     }
     
     // Refresh the double-time days cache to ensure fresh data
