@@ -372,9 +372,9 @@ const ApprovedHoursPage: React.FC = () => {
       // Refresh double days
       let start, end;
       
-      if (filterMonth === "all") {
-        start = safeFormat(subMonths(new Date(), 12), 'yyyy-MM-dd');
-        end = safeFormat(new Date(new Date().getFullYear() + 1, 11, 31), 'yyyy-MM-dd');
+        // Use a very wide date range for "all time" to ensure no records are excluded
+        start = '1900-01-01';
+        end = '2100-12-31';
       } else if (filterMonth === "custom") {
         if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
           start = startDate;
