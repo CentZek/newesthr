@@ -332,19 +332,6 @@ export const fetchEmployeeDetails = async (employeeId: string, dateFilter: strin
     throw error;
   }
 };
-          
-          // Track hours by date
-          if (!employee.hours_by_date[date]) {
-            employee.hours_by_date[date] = hours;
-          } else {
-            // If we already have hours for this date, add to them
-            employee.hours_by_date[date] += hours;
-          }
-        }
-      }
-    });
-    
-};
 
 // Check if a time record exists before inserting
 export const checkExistingTimeRecord = async (
