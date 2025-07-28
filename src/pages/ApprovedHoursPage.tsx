@@ -373,7 +373,7 @@ const ApprovedHoursPage: React.FC = () => {
       let start, end;
       
       if (filterMonth === "all") {
-        // Default to very wide range for all time
+        // Use a very wide date range for "all time" to ensure no records are excluded
         start = '1900-01-01';
         end = '2100-12-31';
       } else if (filterMonth === "custom") {
