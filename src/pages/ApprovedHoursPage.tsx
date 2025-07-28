@@ -118,7 +118,6 @@ const ApprovedHoursPage: React.FC = () => {
             // Use very wide range for parsing errors
             start = '1900-01-01';
             end = '2100-12-31';
-            end = safeFormat(endOfMonth(new Date()), 'yyyy-MM-dd');
           }
         }
         
@@ -421,6 +420,8 @@ const ApprovedHoursPage: React.FC = () => {
             } else {
               // For invalid custom range, don't apply any filter
               dateFilter = '';
+            }
+          } else if (filterMonth !== "all") {
             dateFilter = filterMonth;
           }
           
