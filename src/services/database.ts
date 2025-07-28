@@ -17,7 +17,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
   totalHoursSum: number;
 }> => {
   try {
-    // Fetch ALL approved records (check-in, check-out, and off-day) to get complete picture
+    // Fetch approved records - keep original logic but ensure we get all relevant records
     let query = supabase
       .from('time_records')
       .select(`
@@ -33,7 +33,8 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
           employee_number
         )
       `)
-      .eq('approved', true);  // Only fetch approved records
+      .eq('approved', true)  // Only fetch approved records
+      .in('status', ['check_in', 'off_day']); // Keep original status filtering
     
     // Apply date filter if provided
     if (dateFilter) {
@@ -76,97 +77,80 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
     
     if (error) throw error;
     
-    // Group records by employee first, then by day
+    // Group records by employee - keep original logic structure
     const employeeSummary = new Map();
     let totalHoursSum = 0;
     
-    // First, group all records by employee
-    const recordsByEmployee = new Map();
+    // Process records by employee - restore original working logic
     data?.forEach(record => {
       if (!record.employees) return;
       
       const employeeId = record.employee_id;
       
-      if (!recordsByEmployee.has(employeeId)) {
-        recordsByEmployee.set(employeeId, {
+      // Initialize employee summary if not exists
+      if (!employeeSummary.has(employeeId)) {
+        employeeSummary.set(employeeId, {
           id: employeeId,
           name: record.employees.name,
           employee_number: record.employees.employee_number,
-          records: []
+          total_days: 0,
+          total_hours: 0,
+          working_week_dates: [],
+          hours_by_date: {},
+          off_days: new Set(),
+          working_days: 0,
+          off_days_count: 0
         });
       }
       
-      recordsByEmployee.get(employeeId).records.push(record);
-    });
-    
-    // Now process each employee's records day by day
-    recordsByEmployee.forEach((employeeData, employeeId) => {
-      const { records } = employeeData;
+      const employee = employeeSummary.get(employeeId);
       
-      // Group records by working_week_start (day)
-      const recordsByDay = new Map();
-      records.forEach(record => {
-        let dateKey = record.working_week_start || '';
-        if (!dateKey) {
-          const utc = parseISO(record.timestamp);
-          dateKey = utc.toISOString().slice(0, 10);  // "YYYY-MM-DD"
-        }
+      // Get date key for this record
+      let dateKey = record.working_week_start || '';
+      if (!dateKey) {
+        const utc = parseISO(record.timestamp);
+        dateKey = utc.toISOString().slice(0, 10);  // "YYYY-MM-DD"
+      }
+      
+      // Check if we've already processed this date for this employee
+      if (!employee.working_week_dates.includes(dateKey)) {
+        employee.working_week_dates.push(dateKey);
+        employee.total_days += 1;
         
-        if (!recordsByDay.has(dateKey)) {
-          recordsByDay.set(dateKey, []);
-        }
-        recordsByDay.get(dateKey).push(record);
-      });
-      
-      // Initialize employee summary
-      const employee = {
-        id: employeeId,
-        name: employeeData.name,
-        employee_number: employeeData.employee_number,
-        total_days: recordsByDay.size,
-        total_hours: 0,
-        working_week_dates: Array.from(recordsByDay.keys()),
-        hours_by_date: {},
-        off_days: new Set(),
-        working_days: 0,
-        off_days_count: 0
-      };
-      
-      // Process each day
-      recordsByDay.forEach((dayRecords, dateKey) => {
-        const isOffDay = dayRecords.some(r => r.status === 'off_day');
-        
-        if (isOffDay) {
-          const offDayRecord = dayRecords.find(r => r.status === 'off_day');
-          const isLeaveDay = offDayRecord && offDayRecord.notes && offDayRecord.notes !== 'OFF-DAY';
+        // Determine if this is an off day or working day
+        if (record.status === 'off_day') {
+          const isLeaveDay = record.notes && record.notes !== 'OFF-DAY';
           
           if (isLeaveDay) {
             // Leave day: 9 hours
-            employee.total_hours += 9.0;
+            const hours = 9.0;
+            employee.total_hours += hours;
             employee.working_days += 1;
+            employee.hours_by_date[dateKey] = hours;
           } else {
             // Regular OFF-DAY: 0 hours
             employee.off_days.add(dateKey);
             employee.off_days_count += 1;
           }
         } else {
-          // Regular working day - get hours from check-in record (to avoid double counting)
-          const checkInRecord = dayRecords.find(r => r.status === 'check_in');
-          if (checkInRecord && checkInRecord.exact_hours && !isNaN(parseFloat(checkInRecord.exact_hours))) {
-            const hours = parseFloat(checkInRecord.exact_hours);
+          // Regular working day - use exact_hours if available
+          let hours = 0;
+          if (record.exact_hours && !isNaN(parseFloat(record.exact_hours))) {
+            hours = parseFloat(record.exact_hours);
+          }
+          
+          if (hours > 0) {
             employee.total_hours += hours;
             employee.working_days += 1;
-            
-            // Track hours by date for double-time calculations
             employee.hours_by_date[dateKey] = hours;
           }
         }
-      });
-      
-      // Add to totals
-      totalHoursSum += employee.total_hours;
-      
-      employeeSummary.set(employeeId, employee);
+      }
+    });
+    
+    // Calculate total hours sum
+    employeeSummary.forEach(emp => {
+      totalHoursSum += emp.total_hours;
     });
     
     // Calculate double-time hours for each employee

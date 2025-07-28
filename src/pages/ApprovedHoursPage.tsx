@@ -86,9 +86,9 @@ const ApprovedHoursPage: React.FC = () => {
         let start, end;
         
         if (filterMonth === "all") {
-          // Use a large date range for "all time" (past year to future year)
-          start = safeFormat(subMonths(new Date(), 12), 'yyyy-MM-dd');
-          end = safeFormat(new Date(new Date().getFullYear() + 1, 11, 31), 'yyyy-MM-dd');
+          // Use a very wide date range for "all time" to ensure no records are excluded
+          start = '1900-01-01';
+          end = '2100-12-31';
         } else if (filterMonth === "custom") {
           // Use the selected date range
           start = startDate;
