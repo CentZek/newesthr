@@ -17,6 +17,8 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
   totalHoursSum: number;
 }> => {
   try {
+    console.log('fetchApprovedHours called with dateFilter:', dateFilter);
+    
     // Fetch approved records - keep original logic but ensure we get all relevant records
     let query = supabase
       .from('time_records')
@@ -37,7 +39,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
       .in('status', ['check_in', 'off_day']); // Keep original status filtering
     
     // Apply date filter if provided
-    if (dateFilter) {
+    if (dateFilter && dateFilter.trim() !== '') {
       if (dateFilter.includes('|')) {
         // Custom date range: startDate|endDate
         const [startDate, endDate] = dateFilter.split('|');
@@ -47,6 +49,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
           query = query
             .gte('working_week_start', startDate)
             .lte('working_week_start', endDate);
+          console.log('Applied custom date range filter:', startDate, 'to', endDate);
         }
       } else {
         // Month filter: YYYY-MM
@@ -65,17 +68,22 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
               query = query
                 .gte('working_week_start', startStr)
                 .lte('working_week_start', endStr);
+              console.log('Applied month filter:', startStr, 'to', endStr);
             }
           }
         } catch (error) {
           console.error('Error parsing month filter:', error);
         }
       }
+    } else {
+      console.log('No date filter applied - fetching all approved records');
     }
     
     const { data, error } = await query;
     
     if (error) throw error;
+    
+    console.log('Raw data fetched:', data?.length, 'records');
     
     // Group records by employee - keep original logic structure
     const employeeSummary = new Map();
@@ -153,10 +161,13 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
       totalHoursSum += emp.total_hours;
     });
     
+    console.log('Processed employees:', employeeSummary.size);
+    console.log('Total hours sum:', totalHoursSum);
+    
     // Calculate double-time hours for each employee
     let startDate, endDate;
     
-    if (dateFilter) {
+    if (dateFilter && dateFilter.trim() !== '') {
       if (dateFilter.includes('|')) {
         // Custom date range
         [startDate, endDate] = dateFilter.split('|');
@@ -170,15 +181,16 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
               startDate = format(startOfMonth(monthDate), 'yyyy-MM-dd');
               endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
             } else {
-              // Default to recent month if dates are invalid
-              startDate = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-              endDate = format(new Date(), 'yyyy-MM-dd');
+              // Use very wide range if dates are invalid
+              startDate = '1900-01-01';
+              endDate = '2100-12-31';
             }
           }
         } catch (err) {
           console.error('Error parsing month filter:', err);
-          startDate = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-          endDate = format(new Date(), 'yyyy-MM-dd');
+          // Use very wide range if parsing fails
+          startDate = '1900-01-01';
+          endDate = '2100-12-31';
         }
       }
     } else {

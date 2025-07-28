@@ -109,13 +109,15 @@ const ApprovedHoursPage: React.FC = () => {
               end = safeFormat(endOfMonth(monthDate), 'yyyy-MM-dd');
             } else {
               // Use current month as fallback
-              start = safeFormat(startOfMonth(new Date()), 'yyyy-MM-dd');
-              end = safeFormat(endOfMonth(new Date()), 'yyyy-MM-dd');
+              // Use very wide range for invalid dates
+              start = '1900-01-01';
+              end = '2100-12-31';
             }
           } catch (error) {
             console.error('Error parsing filter month:', error);
-            // Use current month as fallback
-            start = safeFormat(startOfMonth(new Date()), 'yyyy-MM-dd');
+            // Use very wide range for parsing errors
+            start = '1900-01-01';
+            end = '2100-12-31';
             end = safeFormat(endOfMonth(new Date()), 'yyyy-MM-dd');
           }
         }
@@ -227,14 +229,14 @@ const ApprovedHoursPage: React.FC = () => {
           dateFilter = `${startDate}|${endDate}`;
         } else {
           console.warn('Invalid date range, using default filter');
-          // Default to recent month if dates are invalid
-          const defaultStart = safeFormat(subMonths(new Date(), 1), 'yyyy-MM-dd');
-          const defaultEnd = safeFormat(new Date(), 'yyyy-MM-dd');
-          dateFilter = `${defaultStart}|${defaultEnd}`;
+          // For invalid custom range, don't apply any filter (treat as "All Time")
+          dateFilter = '';
         }
       } else if (filterMonth !== "all") {
         dateFilter = filterMonth;
       }
+      
+      console.log('ApprovedHours - filterMonth:', filterMonth, 'dateFilter:', dateFilter);
       
       const { data: records } = await fetchEmployeeDetails(employeeId, dateFilter);
       setDailyRecords(records);
@@ -417,12 +419,8 @@ const ApprovedHoursPage: React.FC = () => {
             if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
               dateFilter = `${startDate}|${endDate}`;
             } else {
-              // Use default range if dates are invalid
-              const defaultStart = safeFormat(subMonths(new Date(), 1), 'yyyy-MM-dd');
-              const defaultEnd = safeFormat(new Date(), 'yyyy-MM-dd');
-              dateFilter = `${defaultStart}|${defaultEnd}`;
-            }
-          } else if (filterMonth !== "all") {
+              // For invalid custom range, don't apply any filter
+              dateFilter = '';
             dateFilter = filterMonth;
           }
           
