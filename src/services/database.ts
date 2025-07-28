@@ -17,7 +17,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
   totalHoursSum: number;
 }> => {
   try {
-    console.log('fetchApprovedHours called with dateFilter:', dateFilter);
+    console.log('fetchApprovedHours called with dateFilter:', JSON.stringify(dateFilter));
     
     // Fetch approved records - keep original logic but ensure we get all relevant records
     let query = supabase
@@ -38,18 +38,20 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
       .eq('approved', true)  // Only fetch approved records
       .in('status', ['check_in', 'off_day']); // Keep original status filtering
     
-    // Apply date filter if provided
-    if (dateFilter && dateFilter.trim() !== '') {
+    // Apply date filter ONLY if provided and not empty
+    const shouldApplyDateFilter = dateFilter && dateFilter.trim() !== '' && dateFilter !== 'all';
+    console.log('Should apply date filter:', shouldApplyDateFilter, 'for dateFilter:', dateFilter);
+    
+    if (shouldApplyDateFilter) {
       if (dateFilter.includes('|')) {
         // Custom date range: startDate|endDate
         const [startDate, endDate] = dateFilter.split('|');
         
         if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
-          // Use working_week_start for consistent filtering
           query = query
             .gte('working_week_start', startDate)
             .lte('working_week_start', endDate);
-          console.log('Applied custom date range filter:', startDate, 'to', endDate);
+          console.log('Applied custom date range filter to working_week_start:', startDate, 'to', endDate);
         }
       } else {
         // Month filter: YYYY-MM
@@ -64,11 +66,10 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
               const startStr = format(startDate, 'yyyy-MM-dd');
               const endStr = format(endDate, 'yyyy-MM-dd');
               
-              // Use working_week_start for consistent filtering
               query = query
                 .gte('working_week_start', startStr)
                 .lte('working_week_start', endStr);
-              console.log('Applied month filter:', startStr, 'to', endStr);
+              console.log('Applied month filter to working_week_start:', startStr, 'to', endStr);
             }
           }
         } catch (error) {
@@ -76,7 +77,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         }
       }
     } else {
-      console.log('No date filter applied - fetching all approved records');
+      console.log('NO DATE FILTER APPLIED - fetching ALL approved records');
     }
     
     const { data, error } = await query;
