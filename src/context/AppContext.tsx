@@ -194,6 +194,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Skip updating Supabase if we're still loading initial data
         if (isLoading) return;
         
+        // Skip auto-update for large datasets to prevent performance issues
+        const totalRecords = employeeRecords.reduce((sum, emp) => sum + emp.days.length, 0);
+        if (totalRecords > 500) {
+          console.log(`Skipping auto-update for large dataset (${totalRecords} records). Use manual save instead.`);
+          return;
+        }
+        
         try {
           const result = await updateInSupabase(employeeRecords);
           
@@ -212,7 +219,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     
     // Debounce updates to avoid excessive API calls
-    const timeoutId = setTimeout(updateSupabaseData, 2000);
+    // Increase debounce time for large datasets
+    const totalRecords = employeeRecords.reduce((sum, emp) => sum + emp.days.length, 0);
+    const debounceTime = totalRecords > 200 ? 5000 : 2000;
+    
+    const timeoutId = setTimeout(updateSupabaseData, debounceTime);
     return () => clearTimeout(timeoutId);
   }, [employeeRecords, activeFileId, hasUploadedFile, isLoading, isResetting]);
 
