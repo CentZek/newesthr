@@ -163,10 +163,10 @@ const ApprovedHoursPage: React.FC = () => {
         
         console.log(`Loaded ${data.length} employees with approved hours`);
         
-        setAllEmployees(data); // Store all employees (now aggregated)
+        setAllEmployees(data); // Store all employees
         
         // Filter employees if specific employees are selected
-        if (selectedEmployees.length > 0 && selectedEmployees.length < data.length) {
+        if (selectedEmployees.length > 0) {
           const filteredData = data.filter((emp) => selectedEmployees.includes(emp.id));
           setEmployees(filteredData);
         } else if (filterEmployee !== "all") {
@@ -176,19 +176,20 @@ const ApprovedHoursPage: React.FC = () => {
           setEmployees(data);
         }
         
-        setTotalEmployees(employees.length); // Use the length of the filtered/selected employees
+        setTotalEmployees(selectedEmployees.length > 0 ? selectedEmployees.length : data.length);
         
         // Calculate total regular hours and total double-time hours
         let regularHours = 0;
         let doubleTimeHours = 0;
         
-        // Sum directly from the aggregated data
-        employees.forEach(employee => {
-          // The RPC now returns total_hours and double_time_hours directly
-          // total_hours from RPC is the regular hours + leave hours
-          // double_time_hours from RPC is the bonus hours
-
-          // Sum regular hours (which includes leave hours from RPC)
+        // Process each employee's data to calculate double-time hours
+        const employeesToCalculate = selectedEmployees.length > 0 
+          ? data.filter(emp => selectedEmployees.includes(emp.id))
+          : filterEmployee !== "all" 
+            ? data.filter(emp => emp.id === filterEmployee) 
+            : data;
+            
+        employeesToCalculate.forEach(employee => {
           // Add the regular hours to the total
           regularHours += employee.total_hours || 0;
           
@@ -198,7 +199,7 @@ const ApprovedHoursPage: React.FC = () => {
         
         setTotalHours(regularHours);
         setTotalDoubleTimeHours(doubleTimeHours);
-        // Calculate total payable hours (regular + double-time bonus)
+        // FIXED: Double-time hours should be added as a bonus to regular hours
         setTotalPayableHours(regularHours + doubleTimeHours);
       } catch (error) {
         console.error('Error loading approved hours:', error);
@@ -685,7 +686,8 @@ const ApprovedHoursPage: React.FC = () => {
                 <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-md">
                   <Clock className="w-5 h-5 text-green-600" />
                   <div>
-                    <div className="text-xs text-green-600 font-medium">Total Payable Hours</div>
+                    <div className="text-xs text-green-600 font-medium">Total Hours</div>
+                    {/* FIXED: Calculate total as regularHours + doubleTimeHours */}
                     <div className="text-lg font-bold text-green-900">{(totalHours + totalDoubleTimeHours).toFixed(2)}</div>
                   </div>
                 </div>
