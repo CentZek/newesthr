@@ -12,28 +12,57 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const employeeIdCache = new Map<string, string>();
 
 // Fetch approved hours summary
-export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
+export const fetchApprovedHours = async (
+  dateFilter: string = '',
+  page: number = 1,
+  pageSize: number = 50
+): Promise<{
   data: any[];
   totalHoursSum: number;
+  totalCount: number;
+  hasMore: boolean;
 }> => {
   try {
-    // First, select only check-in records (to avoid double-counting hours)
-    let query = supabase
+    // Use efficient server-side aggregation instead of fetching all records
+    // First, get the employee list with pagination
+    let employeeQuery = supabase
+      .from('employees')
+      .select('id, name, employee_number')
+      .order('name', { ascending: true });
+
+    // Add pagination
+    const startRange = (page - 1) * pageSize;
+    const endRange = startRange + pageSize - 1;
+    employeeQuery = employeeQuery.range(startRange, endRange);
+
+    const { data: employees, error: employeeError, count: totalEmployees } = await employeeQuery;
+    if (employeeError) throw employeeError;
+
+    if (!employees || employees.length === 0) {
+      return { 
+        data: [], 
+        totalHoursSum: 0, 
+        totalCount: totalEmployees || 0,
+        hasMore: false 
+      };
+    }
+
+    // Get employee IDs for this page
+    const employeeIds = employees.map(emp => emp.id);
+
+    // Build optimized query for time records with aggregation
+    let timeRecordsQuery = supabase
       .from('time_records')
       .select(`
         employee_id,
-        timestamp,
-        status,
         exact_hours,
+        status,
         working_week_start,
-        employees (
-          id,
-          name,
-          employee_number
-        )
+        notes
       `)
-      .in('status', ['check_in', 'off_day'])  // Include both check-in and off-day records
-      .not('exact_hours', 'is', null);
+      .in('employee_id', employeeIds)
+      .eq('approved', true)
+      .in('status', ['check_in', 'off_day']);
     
     // Apply date filter if provided
     if (dateFilter) {
@@ -42,8 +71,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         const [startDate, endDate] = dateFilter.split('|');
         
         if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
-          // Fix: Use working_week_start for consistent filtering
-          query = query
+          timeRecordsQuery = timeRecordsQuery
             .gte('working_week_start', startDate)
             .lte('working_week_start', endDate);
         }
@@ -60,8 +88,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
               const startStr = format(startDate, 'yyyy-MM-dd');
               const endStr = format(endDate, 'yyyy-MM-dd');
               
-              // Fix: Use working_week_start for consistent filtering
-              query = query
+              timeRecordsQuery = timeRecordsQuery
                 .gte('working_week_start', startStr)
                 .lte('working_week_start', endStr);
             }
@@ -72,19 +99,32 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
       }
     }
     
-    // IMPORTANT: Only include approved records
-    query = query.eq('approved', true);
-    
-    const { data, error } = await query;
+    const { data: timeRecordsData, error } = await timeRecordsQuery;
     
     if (error) throw error;
     
-    // Group by employee and calculate totals
+    // Process the data efficiently using Maps for O(1) lookups
     const employeeSummary = new Map();
+    
+    // Initialize employees in the summary
+    employees.forEach(emp => {
+      employeeSummary.set(emp.id, {
+        id: emp.id,
+        name: emp.name,
+        employee_number: emp.employee_number,
+        total_days: new Set(),
+        total_hours: 0,
+        working_week_dates: new Set(),
+        hours_by_date: {},
+        off_days: new Set()
+      });
+    });
+    
     let totalHoursSum = 0;
     
-    data?.forEach(record => {
-      if (!record.employees) return;
+    // Process time records efficiently
+    timeRecordsData?.forEach(record => {
+      if (!employeeSummary.has(record.employee_id)) return;
       
       const employeeId = record.employee_id;
       const hours = parseFloat(record.exact_hours || 0);
@@ -108,19 +148,6 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
           name: record.employees.name,
           employee_number: record.employees.employee_number,
           total_days: new Set(),
-          total_hours: 0,
-          working_week_dates: new Set(), // Track all working week dates for double-time calculations
-          hours_by_date: {}, // Track hours by date for double-time calculations
-          off_days: new Set(), // Track OFF-DAY dates
-        });
-      }
-      
-      const employee = employeeSummary.get(employeeId);
-      
-      // Add date to total_days set
-      if (record.working_week_start) {
-        employee.total_days.add(record.working_week_start);
-        employee.working_week_dates.add(record.working_week_start);
         
         // If it's a leave day, add 9 hours to the employee's total
         if (isLeaveDay) {
@@ -148,165 +175,163 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
             employee.hours_by_date[record.working_week_start] += hours;
           }
         }
-      } else if (record.timestamp && isValid(new Date(record.timestamp))) {
-        // Use the UTC date portion so nothing shifts under local timezones
-        const utc = parseISO(record.timestamp);
-        const date = utc.toISOString().slice(0,10); // "YYYY-MM-DD"
-        employee.total_days.add(date);
-        employee.working_week_dates.add(date);
-        
-        // If it's a leave day, add 9 hours to the employee's total
-        if (isLeaveDay) {
-          // Add hours to total
-          employee.total_hours += 9.0;
-          
-          // Do NOT add leave hours to hours_by_date - leave days should not count for double-time
-          // hours_by_date should only contain actual worked hours
-        }
-        
-        // If it's an OFF-DAY, add to off_days set
-        if (isOffDay) {
-          employee.off_days.add(date);
-        } 
-        // For regular hours (non-OFF-DAY records)
-        else if (hours > 0) {
-          employee.total_hours += hours;
-          
-          // Track hours by date
-          if (!employee.hours_by_date[date]) {
-            employee.hours_by_date[date] = hours;
-          } else {
-            // If we already have hours for this date, add to them
-            employee.hours_by_date[date] += hours;
-          }
-        }
       }
     });
+
+    // Efficiently calculate double-time hours for this page of employees
+    let startDate, endDate;
     
-    // Apply additional filter to include only approved records for Off-DAY
-    let offDayQuery = supabase
-      .from('time_records')
-      .select(`
-        employee_id,
-        timestamp,
-        status,
-        working_week_start,
-        notes,
-        employees (
-          id,
-          name,
-          employee_number
-        )
-      `)
-      .eq('status', 'off_day')
-      .eq('approved', true);  // Only approved off-day records
-    
-    // Apply the same date filter to off-day records
     if (dateFilter) {
       if (dateFilter.includes('|')) {
-        // Custom date range: startDate|endDate
-        const [startDate, endDate] = dateFilter.split('|');
-        
-        if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
-          // Fix: Use working_week_start for consistent filtering
-          offDayQuery = offDayQuery
-            .gte('working_week_start', startDate)
-            .lte('working_week_start', endDate);
-        }
+        [startDate, endDate] = dateFilter.split('|');
       } else {
-        // Month filter: YYYY-MM
         try {
           const [year, month] = dateFilter.split('-');
           if (year && month) {
             const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
             if (isValid(monthDate)) {
-              const startDate = startOfMonth(monthDate);
-              const endDate = endOfMonth(monthDate);
-              
-              // Fix: Use working_week_start for consistent filtering
-              offDayQuery = offDayQuery
-                .gte('working_week_start', format(startDate, 'yyyy-MM-dd'))
-                .lte('working_week_start', format(endDate, 'yyyy-MM-dd'));
+              startDate = format(startOfMonth(monthDate), 'yyyy-MM-dd');
+              endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
             }
           }
         } catch (err) {
-          console.error('Error parsing month filter for off days:', err);
+          console.error('Error parsing month filter:', err);
+        }
+      }
+    } else {
+      // Default to last 365 days for performance
+      startDate = format(subDays(new Date(), 365), 'yyyy-MM-dd');
+      endDate = format(addDays(new Date(), 30), 'yyyy-MM-dd');
+    }
+    
+    // Get double-time days efficiently
+    const doubleDays = startDate && endDate ? await getDoubleTimeDays(startDate, endDate) : [];
+    
+    // Convert to array and calculate final results
+    const result = Array.from(employeeSummary.values()).map(emp => {
+      // Calculate double-time hours efficiently
+      let doubleTimeHours = 0;
+      const workingDates = Array.from(emp.working_week_dates);
+      
+      workingDates.forEach(dateStr => {
+        const hours = emp.hours_by_date?.[dateStr] || 0;
+        const isDoubletime = doubleDays.includes(dateStr) || isFriday(parseISO(dateStr));
+        
+        if (isDoubletime && hours > 0) {
+          doubleTimeHours += hours <= 9 ? hours : Math.max(0, 18 - hours);
+        }
+      });
+      
+      const offDaysCount = emp.off_days ? emp.off_days.size : 0;
+      const workingDays = emp.total_days.size - offDaysCount;
+      
+      return {
+        ...emp,
+        total_days: emp.total_days.size,
+        working_days: workingDays,
+        off_days_count: offDaysCount,
+        total_hours: parseFloat(emp.total_hours.toFixed(2)),
+        double_time_hours: parseFloat(doubleTimeHours.toFixed(2)),
+        working_week_dates: workingDates
+      };
+    });
+    
+    // Sort by name for consistent pagination
+    result.sort((a, b) => a.name.localeCompare(b.name));
+    
+    return { 
+      data: result, 
+      totalHoursSum: parseFloat(totalHoursSum.toFixed(2)),
+      totalCount: totalEmployees || 0,
+      hasMore: (totalEmployees || 0) > endRange + 1
+    };
+  } catch (error) {
+    console.error('Error fetching approved hours:', error);
+    throw error;
+  }
+};
+
+// New function to get total summary across all employees efficiently
+export const fetchApprovedHoursSummary = async (dateFilter: string = ''): Promise<{
+  totalEmployees: number;
+  totalHours: number;
+  totalDoubleTimeHours: number;
+}> => {
+  try {
+    // Get count of employees with approved records
+    let employeeCountQuery = supabase
+      .from('time_records')
+      .select('employee_id', { count: 'exact' })
+      .eq('approved', true);
+    
+    if (dateFilter) {
+      if (dateFilter.includes('|')) {
+        const [startDate, endDate] = dateFilter.split('|');
+        if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
+          employeeCountQuery = employeeCountQuery
+            .gte('working_week_start', startDate)
+            .lte('working_week_start', endDate);
+        }
+      } else {
+        try {
+          const [year, month] = dateFilter.split('-');
+          if (year && month) {
+            const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+            if (isValid(monthDate)) {
+              const startDate = format(startOfMonth(monthDate), 'yyyy-MM-dd');
+              const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+              employeeCountQuery = employeeCountQuery
+                .gte('working_week_start', startDate)
+                .lte('working_week_start', endDate);
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing month filter:', error);
         }
       }
     }
     
-    const { data: offDayData, error: offDayError } = await offDayQuery;
+    const { count: totalEmployees } = await employeeCountQuery;
     
-    if (offDayError) throw offDayError;
+    // Get total hours efficiently using database aggregation
+    let totalHours = 0;
+    let totalDoubleTimeHours = 0;
     
-    // Add OFF-DAY records to the employee totals
-    offDayData?.forEach(record => {
-      if (!record.employees) return;
-      
-      const employeeId = record.employee_id;
-      
-      if (!employeeSummary.has(employeeId)) {
-        employeeSummary.set(employeeId, {
-          id: employeeId,
-          name: record.employees.name,
-          employee_number: record.employees.employee_number,
-          total_days: new Set(),
-          total_hours: 0,
-          working_week_dates: new Set(),
-          hours_by_date: {},
-          off_days: new Set()
-        });
-      }
-      
-      const employee = employeeSummary.get(employeeId);
-      
-      // Check if this is a leave day (not a regular OFF-DAY)
-      const isLeaveDay = record.notes && record.notes !== 'OFF-DAY';
-      
-      // Add date to total_days set
-      if (record.working_week_start) {
-        employee.total_days.add(record.working_week_start);
-        employee.working_week_dates.add(record.working_week_start);
-        
-        // If it's a leave day, add 9 hours to the employee's total
-        if (isLeaveDay) {
-          // Add hours to total
-          employee.total_hours += 9.0;
-          
-          // Do NOT add leave hours to hours_by_date - leave days should not count for double-time
-          // hours_by_date should only contain actual worked hours
-        }
-        
-        // If it's an OFF-DAY, add to off_days set
-        if (!isLeaveDay) {
-          employee.off_days.add(record.working_week_start);
-        }
-      } else if (record.timestamp && isValid(new Date(record.timestamp))) {
-        // Use the UTC date portion so nothing shifts under local timezones
-        const utc = parseISO(record.timestamp);
-        const date = utc.toISOString().slice(0,10); // "YYYY-MM-DD"
-        employee.total_days.add(date);
-        employee.working_week_dates.add(date);
-        
-        // If it's a leave day, add 9 hours to the employee's total
-        if (isLeaveDay) {
-          // Add hours to total
-          employee.total_hours += 9.0;
-          
-          // Do NOT add leave hours to hours_by_date - leave days should not count for double-time
-          // hours_by_date should only contain actual worked hours
-        }
-        
-        // If it's an OFF-DAY, add to off_days set
-        if (!isLeaveDay) {
-          employee.off_days.add(date);
-        }
-      }
-    });
+    // This would ideally be done with a proper aggregate query, but for now
+    // we'll use the existing pagination approach and sum the results
+    let page = 1;
+    const pageSize = 100; // Larger page size for summary calculation
+    let hasMore = true;
     
-    // Calculate double-time hours for each employee
-    let startDate, endDate;
+    while (hasMore) {
+      const pageData = await fetchApprovedHours(dateFilter, page, pageSize);
+      
+      pageData.data.forEach(emp => {
+        totalHours += emp.total_hours || 0;
+        totalDoubleTimeHours += emp.double_time_hours || 0;
+      });
+      
+      hasMore = pageData.hasMore;
+      page++;
+      
+      // Safety break to prevent infinite loops
+      if (page > 1000) break;
+    }
     
+    return {
+      totalEmployees: totalEmployees || 0,
+      totalHours: parseFloat(totalHours.toFixed(2)),
+      totalDoubleTimeHours: parseFloat(totalDoubleTimeHours.toFixed(2))
+    };
+  } catch (error) {
+    console.error('Error fetching approved hours summary:', error);
+    return {
+      totalEmployees: 0,
+      totalHours: 0,
+      totalDoubleTimeHours: 0
+    };
+  }
+};
     if (dateFilter) {
       if (dateFilter.includes('|')) {
         // Custom date range

@@ -41,8 +41,13 @@ const ApprovedHoursPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, username, logout } = useHrAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [allEmployees, setAllEmployees] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const [totalEmployeesCount, setTotalEmployeesCount] = useState(0);
   const [expandedEmployee, setExpandedEmployee] = useState<string | null>(null);
   const [dailyRecords, setDailyRecords] = useState<any[]>([]);
   // Set default filter to current month instead of "all"
@@ -133,77 +138,89 @@ const ApprovedHoursPage: React.FC = () => {
     loadDoubleDays();
   }, [filterMonth, startDate, endDate]);
 
-  // Fetch all approved hours summary
+  // Load summary statistics efficiently
   useEffect(() => {
-    const loadApprovedHours = async () => {
-      setIsLoading(true);
+    const loadSummaryStats = async () => {
+      setIsLoadingSummary(true);
       try {
         let dateFilter = "";
         
         if (filterMonth === "custom") {
-          // Validate dates before setting the filter
           if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
             dateFilter = `${startDate}|${endDate}`;
-          } else {
-            console.warn('Invalid date range, using default filter');
-            // Default to recent month if dates are invalid
-            const defaultStart = safeFormat(subMonths(new Date(), 1), 'yyyy-MM-dd');
-            const defaultEnd = safeFormat(new Date(), 'yyyy-MM-dd');
-            dateFilter = `${defaultStart}|${defaultEnd}`;
           }
         } else if (filterMonth !== "all") {
           dateFilter = filterMonth;
         }
         
-        const { data, totalHoursSum } = await fetchApprovedHours(dateFilter);
-        setAllEmployees(data); // Store all employees
+        const { totalEmployees: empCount, totalHours: regHours, totalDoubleTimeHours: dtHours } = 
+          await fetchApprovedHoursSummary(dateFilter);
         
-        // Filter employees if specific employees are selected
-        if (selectedEmployees.length > 0) {
-          const filteredData = data.filter((emp) => selectedEmployees.includes(emp.id));
-          setEmployees(filteredData);
-        } else if (filterEmployee !== "all") {
-          const filteredData = data.filter((emp) => emp.id === filterEmployee);
-          setEmployees(filteredData);
-        } else {
-          setEmployees(data);
+        setTotalEmployees(empCount);
+        setTotalHours(regHours);
+        setTotalDoubleTimeHours(dtHours);
+        setTotalPayableHours(regHours + dtHours);
+      } catch (error) {
+        console.error('Error loading summary stats:', error);
+        toast.error('Failed to load summary statistics');
+      } finally {
+        setIsLoadingSummary(false);
+      }
+    };
+    
+    loadSummaryStats();
+  }, [filterMonth, startDate, endDate]);
+
+  // Fetch paginated approved hours data
+  useEffect(() => {
+    const loadApprovedHours = async () => {
+      if (currentPage === 1) {
+        setIsLoading(true);
+        setEmployees([]);
+        setAllEmployees([]);
+      } else {
+        setIsLoadingMore(true);
+      }
+      
+      try {
+        let dateFilter = "";
+        
+        if (filterMonth === "custom") {
+          if (startDate && endDate && isValid(parseISO(startDate)) && isValid(parseISO(endDate))) {
+            dateFilter = `${startDate}|${endDate}`;
+          }
+        } else if (filterMonth !== "all") {
+          dateFilter = filterMonth;
         }
         
-        setTotalEmployees(selectedEmployees.length > 0 ? selectedEmployees.length : data.length);
+        const { data, totalHoursSum, totalCount, hasMore } = await fetchApprovedHours(
+          dateFilter, 
+          currentPage, 
+          50 // Page size
+        );
         
-        // Calculate total regular hours and total double-time hours
-        let regularHours = 0;
-        let doubleTimeHours = 0;
+        if (currentPage === 1) {
+          // First page - replace data
+          setAllEmployees(data);
+          setEmployees(data);
+          setTotalEmployeesCount(totalCount);
+        } else {
+          // Subsequent pages - append data
+          setAllEmployees(prev => [...prev, ...data]);
+          setEmployees(prev => [...prev, ...data]);
+        }
         
-        // Process each employee's data to calculate double-time hours
-        const employeesToCalculate = selectedEmployees.length > 0 
-          ? data.filter(emp => selectedEmployees.includes(emp.id))
-          : filterEmployee !== "all" 
-            ? data.filter(emp => emp.id === filterEmployee) 
-            : data;
-            
-        employeesToCalculate.forEach(employee => {
-          // Add the regular hours to the total
-          regularHours += employee.total_hours || 0;
-          
-          // Add the double-time hours bonus
-          doubleTimeHours += employee.double_time_hours || 0;
-        });
-        
-        setTotalHours(regularHours);
-        setTotalDoubleTimeHours(doubleTimeHours);
-        // FIXED: Double-time hours should be added as a bonus to regular hours
-        setTotalPayableHours(regularHours + doubleTimeHours);
+        setHasMoreData(hasMore);
       } catch (error) {
         console.error('Error loading approved hours:', error);
         toast.error('Failed to load approved hours data');
       } finally {
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
     };
 
     loadApprovedHours();
-  }, [filterMonth, doubleDays, filterEmployee, selectedEmployees, startDate, endDate]);
 
   // Handle employee expansion
   const handleEmployeeExpand = async (employeeId: string) => {
