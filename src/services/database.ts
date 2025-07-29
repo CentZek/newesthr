@@ -43,8 +43,8 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
 
     // Call the RPC function with the determined date filters
     const { data, error } = await supabase.rpc('get_approved_hours_summary', {
-      start_date_filter: startDate,
       end_date_filter: endDate,
+      start_date_filter: startDate,
     });
 
     if (error) {
