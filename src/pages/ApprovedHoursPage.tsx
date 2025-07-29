@@ -878,6 +878,33 @@ const ApprovedHoursPage: React.FC = () => {
                         )}
                       </React.Fragment>
                     ))}
+                    
+                    {/* Load More Button */}
+                    {hasMoreData && (
+                      <div className="p-4 text-center border-t border-gray-200">
+                        <button
+                          onClick={loadMoreData}
+                          disabled={isLoadingMore}
+                          className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLoadingMore ? (
+                            <>
+                              <span className="inline-block h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin mr-2"></span>
+                              Loading more...
+                            </>
+                          ) : (
+                            `Load More (${totalEmployeesCount - employees.length} remaining)`
+                          )}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* End of data indicator */}
+                    {!hasMoreData && employees.length > 0 && (
+                      <div className="p-4 text-center border-t border-gray-200 text-sm text-gray-500">
+                        Showing all {employees.length} employees
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

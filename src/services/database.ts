@@ -5,6 +5,12 @@ import toast from 'react-hot-toast';
 import { parseShiftTimes } from '../utils/dateTimeHelper';
 import { isDoubleTimeDay, getDoubleTimeDays, backupCurrentHolidays, refreshDoubleTimeDaysCache } from '../services/holidayService';
 
+// Import missing functions from date-fns
+import { startOfMonth, endOfMonth, subDays, addDays } from 'date-fns';
+
+// Add the new import for the summary function
+export { fetchApprovedHoursSummary } from './database';
+
 // Helper function to create a delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
