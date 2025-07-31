@@ -3,6 +3,29 @@ import { format, differenceInMinutes, differenceInHours, addDays, subDays, getDa
 import { TimeRecord, SHIFT_TIMES, LATE_TOLERANCE_MINUTES, LATE_THRESHOLDS, CANTEEN_SHIFT_HOURS } from '../types';
 import { formatTime24H } from './dateTimeHelper';
 
+// Get the expected shift start time for accurate lateness calculation
+export const getExpectedShiftStartTime = (
+  checkInTime: Date, 
+  shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'custom'
+): { hour: number; minute: number } => {
+  if (shiftType === 'canteen') {
+    const checkInHour = checkInTime.getHours();
+    const checkInMinute = checkInTime.getMinutes();
+    
+    // Determine if this is a 7 AM or 8 AM canteen shift based on check-in time
+    // If check-in is before 7:30 AM, assume 7 AM shift
+    // If check-in is 7:30 AM or later, assume 8 AM shift
+    if (checkInHour < 7 || (checkInHour === 7 && checkInMinute < 30)) {
+      return CANTEEN_SHIFT_HOURS.early.start; // 7 AM shift
+    } else {
+      return CANTEEN_SHIFT_HOURS.late.start; // 8 AM shift
+    }
+  }
+  
+  // For other shift types, use the standard SHIFT_TIMES
+  return SHIFT_TIMES[shiftType].start;
+};
+
 // Determine shift type based on check-in time
 export const determineShiftType = (
   checkInTime: Date, 
@@ -208,6 +231,28 @@ export const calculatePayableHours = (
     return finalHours;
   }
   
+  // Check if employee is significantly late (more than 1 hour)
+  let isSignificantlyLate = false;
+  if (shiftType && shiftType !== 'custom') {
+    const expectedStart = getExpectedShiftStartTime(checkInTime, shiftType);
+    const expectedStartMinutes = expectedStart.hour * 60 + expectedStart.minute;
+    const actualStartMinutes = checkInTime.getHours() * 60 + checkInTime.getMinutes();
+    
+    // Calculate lateness in minutes
+    let latenessInMinutes = actualStartMinutes - expectedStartMinutes;
+    
+    // Handle day rollover for night shifts (if check-in is early morning, it might be from previous day)
+    if (shiftType === 'night' && checkInTime.getHours() < 12) {
+      // If check-in is in early morning hours for night shift, it's likely from previous day
+      latenessInMinutes = actualStartMinutes + (24 * 60) - expectedStartMinutes;
+    }
+    
+    // If more than 60 minutes late, flag as significantly late
+    isSignificantlyLate = latenessInMinutes > 60;
+    
+    console.log(`Expected start: ${expectedStart.hour.toString().padStart(2, '0')}:${expectedStart.minute.toString().padStart(2, '0')}, actual start: ${checkInTime.getHours().toString().padStart(2, '0')}:${checkInTime.getMinutes().toString().padStart(2, '0')}, lateness: ${latenessInMinutes} minutes, significantly late: ${isSignificantlyLate}`);
+  }
+  
   // Apply business rules for standardized hours
   
   // Excessive overtime: If > 9.5, preserve actual hours worked
@@ -219,7 +264,8 @@ export const calculatePayableHours = (
     // For substantial overtime, round to the nearest 15 minutes
     hours = Math.round(hours * 4) / 4;
     console.log(`Rounded substantial overtime to ${hours} hours`);
-  } else {
+  } else if (!isSignificantlyLate) {
+    // Only apply the 9-hour credit rule if the employee is NOT significantly late
     // For regular shifts, check if checkout is after the early leave time
     let earlyLeaveHour = 0;
     let earlyLeaveMinute = 0;
@@ -259,6 +305,9 @@ export const calculatePayableHours = (
       console.log(`Worked at least 8.5 hours: giving 9 hours`);
       hours = 9.0;
     }
+  } else {
+    // Employee is significantly late (>1 hour), use actual hours worked
+    console.log(`Employee is significantly late (>1 hour): using actual hours worked (${hours.toFixed(2)})`);
   }
   
   // Apply penalty - ensure hours are reduced if there are penalty minutes
