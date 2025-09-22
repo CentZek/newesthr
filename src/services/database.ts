@@ -416,6 +416,9 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
     
     // Convert to array and calculate days and double-time hours
     const result = Array.from(employeeSummary.values()).map(emp => {
+      // Calculate payroll days using Marilyn's formula
+      const payrollDays = calculatePayrollDays(emp);
+      
       // Calculate double-time hours
       let doubleTimeHours = 0;
       const workingDates = Array.from(emp.working_week_dates);
@@ -456,7 +459,9 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         off_days_count: offDaysCount,
         total_hours: parseFloat(emp.total_hours.toFixed(2)),
         double_time_hours: parseFloat(doubleTimeHours.toFixed(2)),
-        working_week_dates: Array.from(emp.working_week_dates)
+        working_week_dates: Array.from(emp.working_week_dates),
+        payroll_days: payrollDays.totalDays,
+        payroll_breakdown: payrollDays.breakdown
       };
     });
     
@@ -471,6 +476,51 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
     console.error('Error fetching approved hours:', error);
     throw error;
   }
+};
+
+// Calculate payroll days using Marilyn's formula
+const calculatePayrollDays = (emp: any): { totalDays: number; breakdown: any } => {
+  const BASE_DAYS = 30;
+  const STANDARD_OFF_DAYS = 4;
+  
+  // Get counts
+  const offDaysCount = emp.off_days ? emp.off_days.size : 0;
+  const workingDates = Array.from(emp.working_week_dates);
+  
+  // Count double-time days (Fridays + holidays worked)
+  let doubleTimeDaysWorked = 0;
+  workingDates.forEach(dateStr => {
+    const hours = emp.hours_by_date?.[dateStr] || 0;
+    // Only count days where actual work was done (hours > 0)
+    if (hours > 0) {
+      // Check if it's a Friday
+      const date = parseISO(dateStr);
+      if (isFriday(date)) {
+        doubleTimeDaysWorked++;
+      }
+      // TODO: Add holiday check when we have access to holidays in this context
+    }
+  });
+  
+  // Calculate adjustments
+  const excessOffDays = Math.max(offDaysCount - STANDARD_OFF_DAYS, 0);
+  const doubleTimeDaysAdjustment = doubleTimeDaysWorked;
+  const overtimeDaysAdjustment = 0; // TODO: Implement overtime days tracking if needed
+  
+  // Apply Marilyn's formula: 30 - max(OffDays - 4, 0) + DoubleTimeDays + OvertimeDays
+  const totalDays = BASE_DAYS - excessOffDays + doubleTimeDaysAdjustment + overtimeDaysAdjustment;
+  
+  return {
+    totalDays,
+    breakdown: {
+      baseDays: BASE_DAYS,
+      offDaysCount,
+      excessOffDays,
+      doubleTimeDaysWorked,
+      overtimeDays: overtimeDaysAdjustment,
+      calculation: `${BASE_DAYS} - ${excessOffDays} + ${doubleTimeDaysAdjustment} + ${overtimeDaysAdjustment} = ${totalDays}`
+    }
+  };
 };
 
 // Fetch employee details for approved hours
@@ -1436,4 +1486,4 @@ export const saveRecordsToDatabase = async (employeeRecords: EmployeeRecord[]): 
 };
 
 // Import missing functions from date-fns
-import { startOfMonth, endOfMonth, subDays, addDays } from 'date-fns';
+import { startOfMonth, endOfMonth, subDays, addDays, isFriday, parseISO } from 'date-fns';
