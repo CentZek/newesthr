@@ -6,20 +6,19 @@ import { formatTime24H } from './dateTimeHelper';
 // Get the expected shift start time for accurate lateness calculation
 export const getExpectedShiftStartTime = (
   checkInTime: Date, 
-  shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'custom'
+  shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'canteen_7am' | 'canteen_8am' | 'custom'
 ): { hour: number; minute: number } => {
+  if (shiftType === 'canteen_7am') {
+    return CANTEEN_SHIFT_HOURS.early.start; // 7 AM shift
+  }
+  
+  if (shiftType === 'canteen_8am') {
+    return CANTEEN_SHIFT_HOURS.late.start; // 8 AM shift
+  }
+  
   if (shiftType === 'canteen') {
-    const checkInHour = checkInTime.getHours();
-    const checkInMinute = checkInTime.getMinutes();
-    
-    // Determine if this is a 7 AM or 8 AM canteen shift based on check-in time
-    // If check-in is before 7:30 AM, assume 7 AM shift
-    // If check-in is 7:30 AM or later, assume 8 AM shift
-    if (checkInHour < 7 || (checkInHour === 7 && checkInMinute < 30)) {
-      return CANTEEN_SHIFT_HOURS.early.start; // 7 AM shift
-    } else {
-      return CANTEEN_SHIFT_HOURS.late.start; // 8 AM shift
-    }
+    // Legacy support - default to 7 AM
+    return CANTEEN_SHIFT_HOURS.early.start;
   }
   
   // For other shift types, use the standard SHIFT_TIMES
@@ -35,15 +34,15 @@ export const determineShiftType = (
   const minute = checkInTime.getMinutes();
   
   // CANTEEN SHIFT DETECTION - Must come first!
-  // Changed: Check for canteen shift only between 6:00-7:00 and 6:00-8:00
-  // Check for 7 AM canteen shift (allow 6:00-7:00)
-  if ((hour === 6) || (hour === 7 && minute === 0)) {
-    return 'canteen';
+  // FIXED: Proper canteen shift detection with specific time ranges
+  // 7 AM canteen shift: 6:00-7:30 AM check-ins
+  if ((hour === 6) || (hour === 7 && minute <= 30)) {
+    return 'canteen_7am';
   }
   
-  // Check for 8 AM canteen shift (allow 6:00-8:00)
-  if ((hour === 6 || hour === 7) || (hour === 8 && minute === 0)) {
-    return 'canteen';
+  // 8 AM canteen shift: 7:31-8:30 AM check-ins  
+  if ((hour === 7 && minute > 30) || (hour === 8 && minute <= 30)) {
+    return 'canteen_8am';
   }
   
   // Night shift: 9:00 PM - 4:29 AM
@@ -83,24 +82,24 @@ export const determineShiftType = (
 };
 
 // Check if a check-in is late
-export const isLateCheckIn = (checkIn: Date, shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'custom' | null): boolean => {
+export const isLateCheckIn = (checkIn: Date, shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'canteen_7am' | 'canteen_8am' | 'custom' | null): boolean => {
   if (!shiftType) return false;
   
   const hour = checkIn.getHours();
   const minute = checkIn.getMinutes();
   
-  // Specific handling for canteen shift - need to determine if 7AM or 8AM canteen staff
+  // Specific handling for canteen shifts
+  if (shiftType === 'canteen_7am') {
+    return hour > 7 || (hour === 7 && minute > LATE_THRESHOLDS.canteen);
+  }
+  
+  if (shiftType === 'canteen_8am') {
+    return hour > 8 || (hour === 8 && minute > LATE_THRESHOLDS.canteen);
+  }
+  
   if (shiftType === 'canteen') {
-    // 7AM staff
-    if (hour === 7) {
-      return minute > LATE_THRESHOLDS.canteen;
-    }
-    // 8AM staff
-    else if (hour === 8) {
-      return minute > LATE_THRESHOLDS.canteen;
-    }
-    // If not at the exact starting hour, it's late if AFTER the expected start time
-    return (hour > 7 && hour < 8) || (hour > 8); 
+    // Legacy support - default to 7 AM logic
+    return hour > 7 || (hour === 7 && minute > LATE_THRESHOLDS.canteen);
   }
   
   // Special handling for night shift - only consider late if more than 30 minutes past start time
@@ -121,30 +120,24 @@ export const isLateCheckIn = (checkIn: Date, shiftType: 'morning' | 'evening' | 
 };
 
 // Check if a check-out is an early leave
-export const isEarlyLeave = (checkOut: Date, shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'custom' | null): boolean => {
+export const isEarlyLeave = (checkOut: Date, shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'canteen_7am' | 'canteen_8am' | 'custom' | null): boolean => {
   if (!shiftType) return false;
   
   const hour = checkOut.getHours();
   const minute = checkOut.getMinutes();
   
   // Specific handling for canteen shifts
+  if (shiftType === 'canteen_7am') {
+    return hour < 15 || (hour === 15 && minute < 30); // Before 3:30 PM is early for 7 AM shift
+  }
+  
+  if (shiftType === 'canteen_8am') {
+    return hour < 16 || (hour === 16 && minute < 30); // Before 4:30 PM is early for 8 AM shift
+  }
+  
   if (shiftType === 'canteen') {
-    // Check if this is a 7AM canteen shift
-    if (hour < 15) {
-      // Before 3 PM is definitely early
-      return true;
-    }
-    // 7AM canteen staff: 3:30 PM is the allowed early leave time
-    else if (hour === 15) {
-      return minute < 30; // Before 3:30 PM is early
-    }
-    // For late canteen shift (8AM-5PM)
-    else if (hour === 16) {
-      return minute < 30; // Before 4:30 PM is early
-    }
-    
-    // After 4:30 PM is not early for 7AM staff, after 5:30 PM not early for 8AM staff
-    return false;
+    // Legacy support - default to 7 AM logic
+    return hour < 15 || (hour === 15 && minute < 30);
   }
   
   // For night shifts, checkout time is typically the next day in early morning
@@ -186,9 +179,9 @@ export const calculateHoursWorked = (checkInTime: Date, checkOutTime: Date): num
 export const calculatePayableHours = (
   checkInTime: Date, 
   checkOutTime: Date, 
-  shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'custom' | null,
+  shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'canteen_7am' | 'canteen_8am' | 'custom' | null,
   penaltyMinutes: number = 0,
-  isManualEdit: boolean = false // New parameter to indicate manual time edits
+  isManualEdit: boolean = false
 ): number => {
   // If shift type is null, try to determine it
   if (!shiftType) {
@@ -202,8 +195,36 @@ export const calculatePayableHours = (
     return calculateNightShiftHours(checkInTime, checkOutTime, penaltyMinutes, isManualEdit);
   }
   
-  // Calculate minutes between check-in and check-out
-  let diffInMinutes = differenceInMinutes(checkOutTime, checkInTime);
+  // NEW: Calculate effective start time (exclude early check-ins from payable hours)
+  let effectiveStartTime = checkInTime;
+  
+  if (shiftType && (SHIFT_TIMES[shiftType] || shiftType === 'canteen_7am' || shiftType === 'canteen_8am')) {
+    // Create scheduled start time for this date
+    const scheduledStart = new Date(checkInTime);
+    
+    if (shiftType === 'canteen_7am') {
+      scheduledStart.setHours(CANTEEN_SHIFT_HOURS.early.start.hour);
+      scheduledStart.setMinutes(CANTEEN_SHIFT_HOURS.early.start.minute);
+    } else if (shiftType === 'canteen_8am') {
+      scheduledStart.setHours(CANTEEN_SHIFT_HOURS.late.start.hour);
+      scheduledStart.setMinutes(CANTEEN_SHIFT_HOURS.late.start.minute);
+    } else if (SHIFT_TIMES[shiftType]) {
+      scheduledStart.setHours(SHIFT_TIMES[shiftType].start.hour);
+      scheduledStart.setMinutes(SHIFT_TIMES[shiftType].start.minute);
+    }
+    
+    scheduledStart.setSeconds(0);
+    scheduledStart.setMilliseconds(0);
+    
+    // Use the later of actual check-in time or scheduled start time
+    // This excludes early check-ins from payable hours calculation
+    effectiveStartTime = checkInTime > scheduledStart ? checkInTime : scheduledStart;
+    
+    console.log(`Scheduled start: ${format(scheduledStart, 'HH:mm')}, Actual check-in: ${format(checkInTime, 'HH:mm')}, Effective start: ${format(effectiveStartTime, 'HH:mm')}`);
+  }
+  
+  // Calculate minutes between effective start time and check-out
+  let diffInMinutes = differenceInMinutes(checkOutTime, effectiveStartTime);
   
   // Log the raw time difference before penalty
   console.log(`Raw time difference: ${diffInMinutes} minutes (${(diffInMinutes/60).toFixed(2)} hours)`);
@@ -253,6 +274,45 @@ export const calculatePayableHours = (
     console.log(`Expected start: ${expectedStart.hour.toString().padStart(2, '0')}:${expectedStart.minute.toString().padStart(2, '0')}, actual start: ${checkInTime.getHours().toString().padStart(2, '0')}:${checkInTime.getMinutes().toString().padStart(2, '0')}, lateness: ${latenessInMinutes} minutes, significantly late: ${isSignificantlyLate}`);
   }
   
+  // NEW: Calculate overtime more accurately
+  let overtimeHours = 0;
+  if (shiftType && (SHIFT_TIMES[shiftType] || shiftType === 'canteen_7am' || shiftType === 'canteen_8am')) {
+    // Create scheduled end time
+    const scheduledEnd = new Date(effectiveStartTime);
+    
+    if (shiftType === 'canteen_7am') {
+      scheduledEnd.setHours(CANTEEN_SHIFT_HOURS.early.end.hour);
+      scheduledEnd.setMinutes(CANTEEN_SHIFT_HOURS.early.end.minute);
+    } else if (shiftType === 'canteen_8am') {
+      scheduledEnd.setHours(CANTEEN_SHIFT_HOURS.late.end.hour);
+      scheduledEnd.setMinutes(CANTEEN_SHIFT_HOURS.late.end.minute);
+    } else if (SHIFT_TIMES[shiftType]) {
+      scheduledEnd.setHours(SHIFT_TIMES[shiftType].end.hour);
+      scheduledEnd.setMinutes(SHIFT_TIMES[shiftType].end.minute);
+    }
+    
+    scheduledEnd.setSeconds(0);
+    scheduledEnd.setMilliseconds(0);
+    
+    // For shifts that cross midnight (like night shift), adjust the end date
+    if (shiftType === 'night' || (SHIFT_TIMES[shiftType] && SHIFT_TIMES[shiftType].end.hour < SHIFT_TIMES[shiftType].start.hour)) {
+      scheduledEnd.setDate(scheduledEnd.getDate() + 1);
+    }
+    
+    // Calculate overtime only if checked out after scheduled end time
+    if (checkOutTime > scheduledEnd) {
+      const overtimeMinutes = differenceInMinutes(checkOutTime, scheduledEnd);
+      overtimeHours = overtimeMinutes / 60;
+      console.log(`Overtime calculation: scheduled end ${format(scheduledEnd, 'HH:mm')}, actual checkout ${format(checkOutTime, 'HH:mm')}, overtime: ${overtimeHours.toFixed(2)} hours`);
+      
+      // Apply 30-minute minimum rule for overtime
+      if (overtimeMinutes < 30) {
+        console.log(`Overtime ${overtimeMinutes} minutes < 30 minutes minimum, not crediting overtime`);
+        overtimeHours = 0;
+      }
+    }
+  }
+  
   // Apply business rules for standardized hours
   
   // Excessive overtime: If > 9.5, preserve actual hours worked
@@ -265,45 +325,54 @@ export const calculatePayableHours = (
     hours = Math.round(hours * 4) / 4;
     console.log(`Rounded substantial overtime to ${hours} hours`);
   } else if (!isSignificantlyLate) {
-    // Only apply the 9-hour credit rule if the employee is NOT significantly late
-    // For regular shifts, check if checkout is after the early leave time
-    let earlyLeaveHour = 0;
-    let earlyLeaveMinute = 0;
+    // NEW: For regular shifts, use 9 hours base + overtime (if any)
+    const baseHours = 9.0;
     
-    if (shiftType === 'canteen') {
-      // Check if this is a 7AM shift or 8AM shift
-      const checkInHour = checkInTime.getHours();
-      if (checkInHour <= 7) {
-        // 7AM shift
-        earlyLeaveHour = 15; // 3 PM
-        earlyLeaveMinute = 30; // 3:30 PM
-      } else {
-        // 8AM shift
-        earlyLeaveHour = 16; // 4 PM
-        earlyLeaveMinute = 30; // 4:30 PM
+    // Check for early leave - if employee leaves more than 30 minutes early, use actual hours
+    let isSignificantEarlyLeave = false;
+    if (shiftType && (SHIFT_TIMES[shiftType] || shiftType === 'canteen_7am' || shiftType === 'canteen_8am')) {
+      const scheduledEnd = new Date(effectiveStartTime);
+      
+      if (shiftType === 'canteen_7am') {
+        scheduledEnd.setHours(CANTEEN_SHIFT_HOURS.early.end.hour);
+        scheduledEnd.setMinutes(CANTEEN_SHIFT_HOURS.early.end.minute);
+      } else if (shiftType === 'canteen_8am') {
+        scheduledEnd.setHours(CANTEEN_SHIFT_HOURS.late.end.hour);
+        scheduledEnd.setMinutes(CANTEEN_SHIFT_HOURS.late.end.minute);
+      } else if (SHIFT_TIMES[shiftType]) {
+        scheduledEnd.setHours(SHIFT_TIMES[shiftType].end.hour);
+        scheduledEnd.setMinutes(SHIFT_TIMES[shiftType].end.minute);
       }
-    } else if (shiftType === 'night') {
-      // For night shifts, early leave time is typically 5:30 AM
-      earlyLeaveHour = 5;
-      earlyLeaveMinute = 30;
-    } else if (shiftType) {
-      // Regular shifts
-      earlyLeaveHour = SHIFT_TIMES[shiftType].earlyLeaveTime.hour;
-      earlyLeaveMinute = SHIFT_TIMES[shiftType].earlyLeaveTime.minute;
+      
+      scheduledEnd.setSeconds(0);
+      scheduledEnd.setMilliseconds(0);
+      
+      // For shifts that cross midnight (like night shift), adjust the end date
+      if (shiftType === 'night' || (SHIFT_TIMES[shiftType] && SHIFT_TIMES[shiftType].end.hour < SHIFT_TIMES[shiftType].start.hour)) {
+        scheduledEnd.setDate(scheduledEnd.getDate() + 1);
+      }
+      
+      // Check if employee left more than 30 minutes early
+      if (checkOutTime < scheduledEnd) {
+        const earlyLeaveMinutes = differenceInMinutes(scheduledEnd, checkOutTime);
+        isSignificantEarlyLeave = earlyLeaveMinutes > 30;
+        console.log(`Early leave check: scheduled end ${format(scheduledEnd, 'HH:mm')}, actual checkout ${format(checkOutTime, 'HH:mm')}, early by ${earlyLeaveMinutes} minutes, significant: ${isSignificantEarlyLeave}`);
+      }
     }
     
-    // Check if checkout is after early leave time
-    if (
-      checkOutTime.getHours() > earlyLeaveHour || 
-      (checkOutTime.getHours() === earlyLeaveHour && checkOutTime.getMinutes() >= earlyLeaveMinute)
-    ) {
-      // If they checked out after the early leave time, give full 9 hours
-      console.log(`Checked out after early leave time: giving 9 hours`);
-      hours = 9.0;
-    } else if (hours >= 8.5) {
-      // If they worked enough time (8.5+ hours), give them 9 hours
-      console.log(`Worked at least 8.5 hours: giving 9 hours`);
-      hours = 9.0;
+    // If significant early leave, use actual hours worked
+    if (isSignificantEarlyLeave) {
+      console.log(`Employee left significantly early (>30 min): using actual hours worked (${hours.toFixed(2)})`);
+      // Keep the actual calculated hours
+    } else {
+      // Only add overtime if there's significant overtime (>= 30 minutes)
+      if (overtimeHours >= 0.5) { // 30 minutes = 0.5 hours
+        hours = baseHours + overtimeHours;
+        console.log(`Applied base hours (${baseHours}) + overtime (${overtimeHours.toFixed(2)}) = ${hours.toFixed(2)} hours`);
+      } else {
+        hours = baseHours;
+        console.log(`Applied standard ${baseHours} hours (no significant overtime)`);
+      }
     }
   } else {
     // Employee is significantly late (>1 hour), use actual hours worked
@@ -382,8 +451,25 @@ export const calculateNightShiftHours = (
     }
   }
   
-  // Calculate minutes between check-in and check-out
-  let diffInMinutes = differenceInMinutes(checkOut, checkIn);
+  // NEW: Calculate effective start time for night shift (exclude early check-ins)
+  let effectiveStartTime = checkIn;
+  
+  if (SHIFT_TIMES.night) {
+    // Create scheduled start time for night shift (21:00)
+    const scheduledStart = new Date(checkIn);
+    scheduledStart.setHours(SHIFT_TIMES.night.start.hour);
+    scheduledStart.setMinutes(SHIFT_TIMES.night.start.minute);
+    scheduledStart.setSeconds(0);
+    scheduledStart.setMilliseconds(0);
+    
+    // Use the later of actual check-in time or scheduled start time
+    effectiveStartTime = checkIn > scheduledStart ? checkIn : scheduledStart;
+    
+    console.log(`Night shift - Scheduled start: ${format(scheduledStart, 'HH:mm')}, Actual check-in: ${format(checkIn, 'HH:mm')}, Effective start: ${format(effectiveStartTime, 'HH:mm')}`);
+  }
+  
+  // Calculate minutes between effective start time and check-out
+  let diffInMinutes = differenceInMinutes(checkOut, effectiveStartTime);
   
   console.log(`Raw time difference: ${diffInMinutes} minutes (${(diffInMinutes/60).toFixed(2)} hours)`);
   
@@ -407,11 +493,34 @@ export const calculateNightShiftHours = (
     return finalHours;
   }
   
+  // NEW: Calculate overtime for night shift more accurately
+  let overtimeHours = 0;
+  
+  // Create scheduled end time for night shift (06:00 next day)
+  const scheduledEnd = new Date(effectiveStartTime);
+  scheduledEnd.setDate(scheduledEnd.getDate() + 1); // Next day
+  scheduledEnd.setHours(SHIFT_TIMES.night.end.hour);
+  scheduledEnd.setMinutes(SHIFT_TIMES.night.end.minute);
+  scheduledEnd.setSeconds(0);
+  scheduledEnd.setMilliseconds(0);
+  
+  // Calculate overtime only if checked out after scheduled end time
+  if (checkOut > scheduledEnd) {
+    const overtimeMinutes = differenceInMinutes(checkOut, scheduledEnd);
+    overtimeHours = overtimeMinutes / 60;
+    console.log(`Night shift overtime: scheduled end ${format(scheduledEnd, 'HH:mm')}, actual checkout ${format(checkOut, 'HH:mm')}, overtime: ${overtimeHours.toFixed(2)} hours`);
+    
+    // Apply 30-minute minimum rule for overtime
+    if (overtimeMinutes < 30) {
+      console.log(`Overtime ${overtimeMinutes} minutes < 30 minutes minimum, not crediting overtime`);
+      overtimeHours = 0;
+    }
+  }
+  
   // Night shift hours calculation rules:
   // 1. Cap at 15 hours for excessive shifts
   // 2. For substantial overtime (>9.5h), round to nearest 15 minutes
-  // 3. If they checked out after 5:30 AM, give full 9 hours even if they came late
-  // 4. If they worked at least 8.5 hours, give them 9 hours
+  // 3. Use 9 hours base + overtime (if any)
   
   // Apply night shift specific rules
   if (hours > 15.0) {
@@ -422,18 +531,40 @@ export const calculateNightShiftHours = (
     hours = Math.round(hours * 4) / 4;
     console.log(`Rounded substantial overtime to ${hours} hours`);
   } else {
-    // Check if they checked out after the early leave threshold (5:30 AM)
-    const checkOutHour = checkOut.getHours();
-    const checkOutMinute = checkOut.getMinutes();
+    // NEW: Use base hours + overtime for night shift
+    const baseHours = 9.0;
     
-    if (checkOutHour > 5 || (checkOutHour === 5 && checkOutMinute >= 30)) {
-      // If they checked out after 5:30 AM, give full 9 hours
-      console.log(`Checked out after early leave threshold (5:30 AM): giving 9 hours`);
-      hours = 9.0;
-    } else if (hours >= 8.5) {
-      // If they worked at least 8.5 hours, give them 9 hours
-      console.log(`Worked at least 8.5 hours: giving 9 hours`);
-      hours = 9.0;
+    // Check for early leave in night shift
+    let isSignificantEarlyLeave = false;
+    
+    // Create scheduled end time for night shift (06:00 next day)
+    const scheduledEnd = new Date(effectiveStartTime);
+    scheduledEnd.setDate(scheduledEnd.getDate() + 1); // Next day
+    scheduledEnd.setHours(SHIFT_TIMES.night.end.hour);
+    scheduledEnd.setMinutes(SHIFT_TIMES.night.end.minute);
+    scheduledEnd.setSeconds(0);
+    scheduledEnd.setMilliseconds(0);
+    
+    // Check if employee left more than 30 minutes early
+    if (checkOut < scheduledEnd) {
+      const earlyLeaveMinutes = differenceInMinutes(scheduledEnd, checkOut);
+      isSignificantEarlyLeave = earlyLeaveMinutes > 30;
+      console.log(`Night shift early leave check: scheduled end ${format(scheduledEnd, 'HH:mm')}, actual checkout ${format(checkOut, 'HH:mm')}, early by ${earlyLeaveMinutes} minutes, significant: ${isSignificantEarlyLeave}`);
+    }
+    
+    // If significant early leave, use actual hours worked
+    if (isSignificantEarlyLeave) {
+      console.log(`Night shift employee left significantly early (>30 min): using actual hours worked (${hours.toFixed(2)})`);
+      // Keep the actual calculated hours
+    } else {
+      // Only add overtime if there's significant overtime (>= 30 minutes)
+      if (overtimeHours >= 0.5) { // 30 minutes = 0.5 hours
+        hours = baseHours + overtimeHours;
+        console.log(`Night shift: Applied base hours (${baseHours}) + overtime (${overtimeHours.toFixed(2)}) = ${hours.toFixed(2)} hours`);
+      } else {
+        hours = baseHours;
+        console.log(`Night shift: Applied standard ${baseHours} hours (no significant overtime)`);
+      }
     }
   }
   
@@ -458,11 +589,23 @@ export const calculateNightShiftHours = (
 };
 
 // Check if checkout time represents excessive overtime
-export const isExcessiveOvertime = (checkOut: Date, shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'custom' | null): boolean => {
+export const isExcessiveOvertime = (checkOut: Date, shiftType: 'morning' | 'evening' | 'night' | 'canteen' | 'canteen_7am' | 'canteen_8am' | 'custom' | null): boolean => {
   if (!shiftType) return false;
   
-  // Get expected end time
-  let endHour = SHIFT_TIMES[shiftType].end.hour;
+  // Get expected end time based on shift type
+  let endHour: number;
+  
+  if (shiftType === 'canteen_7am') {
+    endHour = CANTEEN_SHIFT_HOURS.early.end.hour;
+  } else if (shiftType === 'canteen_8am') {
+    endHour = CANTEEN_SHIFT_HOURS.late.end.hour;
+  } else if (shiftType === 'canteen') {
+    endHour = CANTEEN_SHIFT_HOURS.early.end.hour; // Default to 7 AM canteen
+  } else if (SHIFT_TIMES[shiftType]) {
+    endHour = SHIFT_TIMES[shiftType].end.hour;
+  } else {
+    return false;
+  }
   
   // Add 1 hour to the expected end time for overtime threshold
   const overtimeHour = endHour + 1;
@@ -480,16 +623,20 @@ export const isExcessiveOvertime = (checkOut: Date, shiftType: 'morning' | 'even
     return false;
   }
   
-  // For canteen shifts, determine based on start time pattern
-  if (shiftType === 'canteen') {
+  // For canteen shifts
+  if (shiftType === 'canteen_7am' || shiftType === 'canteen') {
     const hour = checkOut.getHours();
-    
-    // If checkout is after 5:30 PM for 7AM shift, or after 6:30 PM for 8AM shift
-    // For simplicity, we'll consider after 6 PM as excessive for all canteen shifts
-    if (hour >= 18) { // After 6 PM
+    if (hour >= 17) { // After 5 PM for 7 AM canteen
       return true;
     }
-    
+    return false;
+  }
+  
+  if (shiftType === 'canteen_8am') {
+    const hour = checkOut.getHours();
+    if (hour >= 18) { // After 6 PM for 8 AM canteen
+      return true;
+    }
     return false;
   }
   
