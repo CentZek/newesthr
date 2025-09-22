@@ -1226,7 +1226,7 @@ export const exportApprovedHoursToExcel = (data: {
 }): void => {
   // Create worksheets for summary and details
   const summaryData = [
-    ['Employee Number', 'Name', 'Total Days', 'Working Days', 'Off-Days', 'Regular Hours', 'Regular Days', 'Double-Time Hours', 'Double-Time Days', 'Fridays Worked', 'Over Time (Hours)', 'Over Time (Days)', 'Total Payable Hours']
+    ['Employee Number', 'Name', 'Total Days', 'Working Days', 'Off-Days', 'Regular Hours', 'Regular Days', 'Double-Time Hours', 'Double-Time Days', 'Fridays Worked', 'Over Time (Hours)', 'Over Time (Days)', 'Total Payable Hours', 'Days to Credit']
   ];
   
   const detailsData = [
@@ -1284,9 +1284,30 @@ export const exportApprovedHoursToExcel = (data: {
     const workingDays = emp.working_days || (emp.total_days - (emp.off_days_count || 0));
     const offDays = emp.off_days_count || 0;
     
+    // Calculate double-time days worked (Fridays/holidays that were actually worked)
+    let doubleTimeDaysWorked = 0;
+    if (emp.working_week_dates && emp.hours_by_date) {
+      doubleTimeDaysWorked = emp.working_week_dates.filter((date: string) => {
+        try {
+          // Check if this date is a double-time day AND has hours worked
+          return doubleDays.includes(date) && (emp.hours_by_date[date] > 0);
+        } catch (e) {
+          return false;
+        }
+      }).length;
+    }
+    
     // Calculate regular days and double-time days
     const regularDays = parseFloat((emp.total_hours / 9).toFixed(2));
     const doubleTimeDays = parseFloat((doubleTimeHours / 9).toFixed(2));
+    
+    // Calculate Days to Credit using 30-day basis formula:
+    // = 30 + (TotalDays - 30) - max(OffDays - 4, 0) + DoubleTimeDays + OverTimeDays
+    const daysToCredit = 30 + 
+                        (emp.total_days - 30) - 
+                        Math.max(offDays - 4, 0) + 
+                        doubleTimeDays + 
+                        overtimeDays;
     
     summaryData.push([
       emp.employee_number,
@@ -1301,7 +1322,8 @@ export const exportApprovedHoursToExcel = (data: {
       fridaysWorked,
       overtimeHours.toFixed(2),
       overtimeDays.toFixed(2),
-      totalPayableHours.toFixed(2)
+      totalPayableHours.toFixed(2),
+      daysToCredit
     ]);
   });
   
@@ -1423,6 +1445,7 @@ export const exportApprovedHoursToExcel = (data: {
   let totalOvertimeHours = 0;
   let totalWorkingDays = 0;
   let totalOffDays = 0;
+  let totalDaysToCredit = 0;
   
   // Skip the header row (index 0)
   for (let i = 1; i < summaryData.length; i++) {
@@ -1434,6 +1457,7 @@ export const exportApprovedHoursToExcel = (data: {
     totalFridaysWorked += parseFloat(summaryData[i][9]) || 0;
     totalOvertimeHours += parseFloat(summaryData[i][10]) || 0;
     totalPayableHours += parseFloat(summaryData[i][12]) || 0;
+    totalDaysToCredit += parseFloat(summaryData[i][13]) || 0;
   }
   
   // Convert overtime hours to days (assuming 9-hour workday for overtime calculation)
@@ -1450,6 +1474,7 @@ export const exportApprovedHoursToExcel = (data: {
   statsData.push(['Fridays Worked (Days)', totalFridaysWorked]);
   statsData.push(['Overtime Hours', totalOvertimeHours.toFixed(2)]);
   statsData.push(['Overtime (Days)', totalOvertimeDays.toFixed(2)]);
+  statsData.push(['Total Days to Credit', totalDaysToCredit]);
   
   // Filter period
   statsData.push(['Filter Period', data.filterMonth === 'all' ? 'All Time' : data.filterMonth]);
