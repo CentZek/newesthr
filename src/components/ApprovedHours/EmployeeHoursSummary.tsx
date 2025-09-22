@@ -12,8 +12,6 @@ interface EmployeeHoursSummaryProps {
     working_days?: number; // Number of actual working days (total days minus off days)
     off_days_count?: number; // Number of off days
     double_time_hours?: number;
-    payroll_days?: number; // Calculated payroll days using Marilyn's formula
-    payroll_breakdown?: any; // Breakdown of payroll calculation
   };
   isExpanded: boolean;
   onExpand: () => void;
@@ -35,9 +33,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
   
   // Calculate total payable hours (regular + double-time)
   const totalPayableHours = employee.total_hours + doubleTimeHours;
-  
-  // Get payroll days
-  const payrollDays = employee.payroll_days || 0;
 
   return (
     <div 
@@ -89,9 +84,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
           <div className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-bold">
             Avg: <span className="font-bold">{avgHoursPerDay.toFixed(2)}/day</span>
           </div>
-          <div className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs font-bold">
-            Payroll: <span className="font-bold">{payrollDays}</span> days
-          </div>
         </div>
       </div>
       
@@ -120,9 +112,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
             <span>{employee.working_days} work</span>
           </div>
         )}
-        <div className="ml-1 px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded-full text-xs font-bold flex items-center">
-          <span>{payrollDays} payroll</span>
-        </div>
       </div>
       <div className="hidden sm:flex sm:items-center">
         <div className="font-bold text-gray-800">
@@ -136,7 +125,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
         </div>
       </div>
       <div className="hidden sm:flex sm:items-center text-gray-700 font-bold">{avgHoursPerDay.toFixed(2)}</div>
-      <div className="hidden sm:flex sm:items-center text-purple-700 font-bold">{payrollDays}</div>
       <div className="hidden sm:flex sm:items-center">
         <button 
           onClick={(e) => {

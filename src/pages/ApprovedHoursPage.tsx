@@ -843,16 +843,6 @@ const ApprovedHoursPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
-                    {/* Table Header */}
-                    <div className="hidden sm:grid sm:grid-cols-7 gap-2 bg-gray-50 p-4 text-sm font-medium text-gray-600">
-                      <div className="col-span-2">Employee</div>
-                      <div>Total Days</div>
-                      <div>Total Hours</div>
-                      <div>Payroll Days</div>
-                      <div>Avg Hours/Day</div>
-                      <div>Actions</div>
-                    </div>
-                    
                     {employees.map((employee) => (
                       <React.Fragment key={employee.id}>
                         <EmployeeHoursSummary 

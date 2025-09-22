@@ -18,10 +18,6 @@ const EmployeeDetailCard: React.FC<EmployeeDetailCardProps> = ({ employee, doubl
   const totalDays = employee.total_days || 0;
   const offDaysCount = employee.off_days_count || 0;
   const workingDays = employee.working_days !== undefined ? employee.working_days : (totalDays - offDaysCount);
-  
-  // Get payroll calculation data
-  const payrollDays = employee.payroll_days || 0;
-  const payrollBreakdown = employee.payroll_breakdown;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -64,40 +60,8 @@ const EmployeeDetailCard: React.FC<EmployeeDetailCardProps> = ({ employee, doubl
             <p className="text-xs text-green-500">Total Payable Hours</p>
             <p className="text-lg font-bold text-green-700">{totalPayableHours.toFixed(2)}</p>
           </div>
-          
-          <div className="bg-purple-50 p-3 rounded-md">
-            <p className="text-xs text-purple-600 font-medium">Payroll Days</p>
-            <p className="text-lg font-bold text-purple-900">{payrollDays}</p>
-          </div>
         </div>
       </div>
-      
-      {/* Payroll Days Breakdown */}
-      {payrollBreakdown && (
-        <div className="border border-gray-200 rounded-md p-4 mb-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-            <Calendar className="w-4 h-4 mr-2 text-purple-500" />
-            Payroll Days Calculation
-          </h4>
-          <div className="bg-purple-50 p-3 rounded-md text-sm">
-            <div className="font-mono text-purple-800 mb-2">
-              {payrollBreakdown.calculation}
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <p className="text-gray-600">Base days: <span className="font-bold">{payrollBreakdown.baseDays}</span></p>
-                <p className="text-gray-600">Total off-days: <span className="font-bold">{payrollBreakdown.offDaysCount}</span></p>
-                <p className="text-gray-600">Excess off-days: <span className="font-bold">-{payrollBreakdown.excessOffDays}</span></p>
-              </div>
-              <div>
-                <p className="text-gray-600">Double-time days worked: <span className="font-bold">+{payrollBreakdown.doubleTimeDaysWorked}</span></p>
-                <p className="text-gray-600">Overtime days: <span className="font-bold">+{payrollBreakdown.overtimeDays}</span></p>
-                <p className="text-purple-700 font-bold">Final payroll days: <span className="text-lg">{payrollDays}</span></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       
       <div className="border border-gray-200 rounded-md p-4">
         <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
