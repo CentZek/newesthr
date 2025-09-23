@@ -19,6 +19,13 @@ const EmployeeDetailCard: React.FC<EmployeeDetailCardProps> = ({ employee, doubl
   const offDaysCount = employee.off_days_count || 0;
   const workingDays = employee.working_days !== undefined ? employee.working_days : (totalDays - offDaysCount);
 
+  // Get Days to Credit calculation components
+  const daysToCredit = employee.days_to_credit || 0;
+  const doubleTimeDaysWorked = employee.double_time_days_worked || 0;
+  const offDaysOver4 = employee.off_days_over_4 || 0;
+  const offDaysUnder4 = employee.off_days_under_4 || 0;
+  const overtimeDays = employee.overtime_days || 0;
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -59,6 +66,56 @@ const EmployeeDetailCard: React.FC<EmployeeDetailCardProps> = ({ employee, doubl
           <div className="bg-green-50 p-3 rounded-md">
             <p className="text-xs text-green-500">Total Payable Hours</p>
             <p className="text-lg font-bold text-green-700">{totalPayableHours.toFixed(2)}</p>
+          </div>
+          
+          <div className="bg-purple-50 p-3 rounded-md">
+            <p className="text-xs text-purple-500">Days to Credit</p>
+            <p className="text-lg font-bold text-purple-700">{daysToCredit.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Days to Credit Calculation Breakdown */}
+      <div className="border border-gray-200 rounded-md p-4 mb-4">
+        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+          <Calendar className="w-4 h-4 mr-2 text-purple-500" />
+          Days to Credit Calculation
+        </h4>
+        
+        <div className="bg-gray-50 p-3 rounded-md font-mono text-sm">
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span>Base Days:</span>
+              <span className="font-bold">30</span>
+            </div>
+            {offDaysOver4 > 0 && (
+              <div className="flex justify-between text-red-600">
+                <span>Off-days over 4 ({offDaysCount} - 4):</span>
+                <span className="font-bold">-{offDaysOver4}</span>
+              </div>
+            )}
+            {offDaysUnder4 > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Off-days under 4 (4 - {offDaysCount}):</span>
+                <span className="font-bold">+{offDaysUnder4}</span>
+              </div>
+            )}
+            {doubleTimeDaysWorked > 0 && (
+              <div className="flex justify-between text-amber-600">
+                <span>Fridays/Holidays worked:</span>
+                <span className="font-bold">+{doubleTimeDaysWorked}</span>
+              </div>
+            )}
+            {overtimeDays > 0 && (
+              <div className="flex justify-between text-blue-600">
+                <span>Overtime days:</span>
+                <span className="font-bold">+{overtimeDays}</span>
+              </div>
+            )}
+            <div className="border-t border-gray-300 pt-1 mt-2 flex justify-between font-bold text-purple-700">
+              <span>Total Days to Credit:</span>
+              <span>{daysToCredit.toFixed(2)}</span>
+            </div>
           </div>
         </div>
       </div>
