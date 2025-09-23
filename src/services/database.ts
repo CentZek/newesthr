@@ -450,7 +450,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
       const workingDays = emp.total_days.size - offDaysCount;
       
       // Calculate Days to Credit using 30-day base system:
-      // = 30 - max(OffDays - 4, 0) + min(4 - OffDays, 0) + DoubleTimeDaysWorked + OverTimeDays
+      // = 30 + (TotalDays - 30) - max(OffDays - 4, 0) + min(4 - OffDays, 0) + DoubleTimeDaysWorked + OverTimeDays
       const offDaysOver4 = Math.max(offDaysCount - 4, 0);
       const offDaysUnder4 = Math.max(4 - offDaysCount, 0);
       
@@ -470,7 +470,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
       const overtimeDays = 0;
       
       // Calculate Days to Credit
-      const daysToCredit = 30 - offDaysOver4 + offDaysUnder4 + doubleTimeDaysWorked + overtimeDays;
+      const daysToCredit = 30 + (emp.total_days.size - 30) - offDaysOver4 + offDaysUnder4 + doubleTimeDaysWorked + overtimeDays;
       
       return {
         ...emp,

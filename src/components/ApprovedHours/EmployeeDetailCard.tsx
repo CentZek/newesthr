@@ -88,6 +88,10 @@ const EmployeeDetailCard: React.FC<EmployeeDetailCardProps> = ({ employee, doubl
               <span>Base Days:</span>
               <span className="font-bold">30</span>
             </div>
+            <div className="flex justify-between text-blue-600">
+              <span>Days adjustment ({employee.total_days} - 30):</span>
+              <span className="font-bold">{employee.total_days > 30 ? '+' : ''}{employee.total_days - 30}</span>
+            </div>
             {offDaysOver4 > 0 && (
               <div className="flex justify-between text-red-600">
                 <span>Off-days over 4 ({offDaysCount} - 4):</span>
