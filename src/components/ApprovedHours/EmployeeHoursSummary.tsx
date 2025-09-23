@@ -31,10 +31,8 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
   // Calculate double-time hours (if available)
   const doubleTimeHours = employee.double_time_hours || 0;
   
+  // Calculate total payable hours (regular + double-time)
   const totalPayableHours = employee.total_hours + doubleTimeHours;
-  
-  // Get Days to Credit
-  const daysToCredit = employee.days_to_credit || 0;
 
   return (
     <div 
@@ -68,9 +66,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
           {employee.working_days !== undefined && (
             <div className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-bold">
               Working: <span className="font-bold">{employee.working_days}</span>
-            </div>
-            <div className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs font-bold">
-              Days: <span className="font-bold">{daysToCredit.toFixed(1)}</span>
             </div>
           )}
           <div className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs font-bold">
@@ -131,10 +126,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
       </div>
       <div className="hidden sm:flex sm:items-center text-gray-700 font-bold">{avgHoursPerDay.toFixed(2)}</div>
       <div className="hidden sm:flex sm:items-center">
-        <div className="mr-2">
-          <span className="font-bold text-purple-800">{daysToCredit.toFixed(1)}</span>
-          <div className="text-xs text-purple-600">Days</div>
-        </div>
         <button 
           onClick={(e) => {
             e.stopPropagation();
@@ -160,7 +151,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
       </div>
     </div>
   );
-  days_to_credit?: number; // Days to Credit calculation
 };
 
 export default EmployeeHoursSummary;
