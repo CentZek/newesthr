@@ -420,34 +420,39 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
       let doubleTimeHours = 0;
       const workingDates = Array.from(emp.working_week_dates);
       
+      // Count double-time days where actual work was performed (hours > 0)
+      let doubleTimeDaysWorked = 0;
+      
       workingDates.forEach(dateStr => {
         const hours = emp.hours_by_date?.[dateStr] || 0;
-        // Check both the doubleDays array AND if it's a Friday
         const isDoubletime = doubleDays.includes(dateStr) || isFriday(parseISO(dateStr));
         
         if (isDoubletime) {
+          // Only count as worked if there are actual hours > 0
+          if (hours > 0) {
+            doubleTimeDaysWorked++;
+          }
+          
           let bonusHoursForThisDay = 0;
-          // If actual hours worked are 9 or less, the bonus is the actual hours (effectively doubling them)
           if (hours <= 9) {
             bonusHoursForThisDay = hours;
           } else {
-            // If actual hours worked are more than 9, the bonus is calculated to cap the total at 18.
-            // The total credited hours for this day should be 18.
-            // Since 'hours' are already included in 'emp.total_hours' (regular hours),
-            // the bonus needed is (18 - actual_hours).
             bonusHoursForThisDay = 18 - hours;
-            // Ensure bonusHoursForThisDay is not negative (e.g., if actual hours > 18)
             bonusHoursForThisDay = Math.max(0, bonusHoursForThisDay);
           }
           doubleTimeHours += bonusHoursForThisDay;
         }
       });
       
-      // Get the count of off days
       const offDaysCount = emp.off_days ? emp.off_days.size : 0;
       
-      // Calculate working days (total_days - off_days)
       const workingDays = emp.total_days.size - offDaysCount;
+      
+      // Calculate Days to Credit using the 30-day base system
+      // Formula: 30 + (4 - OffDays) + DoubleTimeDaysWorked + OverTimeDays
+      const offDaysAdjustment = 4 - offDaysCount; // +1 for each off-day less than 4, -1 for each over 4
+      const overtimeDays = 0; // Placeholder for future implementation
+      const daysToCredit = 30 + offDaysAdjustment + doubleTimeDaysWorked + overtimeDays;
       
       return {
         ...emp,
@@ -456,7 +461,11 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         off_days_count: offDaysCount,
         total_hours: parseFloat(emp.total_hours.toFixed(2)),
         double_time_hours: parseFloat(doubleTimeHours.toFixed(2)),
-        working_week_dates: Array.from(emp.working_week_dates)
+        double_time_days_worked: doubleTimeDaysWorked,
+        days_to_credit: parseFloat(daysToCredit.toFixed(2)),
+        working_week_dates: Array.from(emp.working_week_dates),
+        off_days_adjustment: offDaysAdjustment,
+        overtime_days: overtimeDays
       };
     });
     
