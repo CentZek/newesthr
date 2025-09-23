@@ -34,9 +34,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
   // Calculate total payable hours (regular + double-time)
   const totalPayableHours = employee.total_hours + doubleTimeHours;
 
-  // Get Days to Credit from the employee data
-  const daysToCredit = employee.days_to_credit || 0;
-
   return (
     <div 
       className={`grid grid-cols-1 sm:grid-cols-6 gap-2 p-4 ${isExpanded ? 'bg-purple-50' : 'hover:bg-gray-50'} cursor-pointer`}
@@ -87,9 +84,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
           <div className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-bold">
             Avg: <span className="font-bold">{avgHoursPerDay.toFixed(2)}/day</span>
           </div>
-          <div className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs font-bold">
-            Days to Credit: <span className="font-bold">{daysToCredit.toFixed(2)}</span>
-          </div>
         </div>
       </div>
       
@@ -131,9 +125,6 @@ const EmployeeHoursSummary: React.FC<EmployeeHoursSummaryProps> = ({
         </div>
       </div>
       <div className="hidden sm:flex sm:items-center text-gray-700 font-bold">{avgHoursPerDay.toFixed(2)}</div>
-      <div className="hidden sm:flex sm:items-center">
-        <div className="font-bold text-purple-800">{daysToCredit.toFixed(2)}</div>
-      </div>
       <div className="hidden sm:flex sm:items-center">
         <button 
           onClick={(e) => {

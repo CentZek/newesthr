@@ -55,7 +55,6 @@ const ApprovedHoursPage: React.FC = () => {
   const [totalEmployees, setTotalEmployees] = useState(0);
   const [totalDoubleTimeHours, setTotalDoubleTimeHours] = useState(0);
   const [totalPayableHours, setTotalPayableHours] = useState(0);
-  const [totalDaysToCredit, setTotalDaysToCredit] = useState(0);
   const [doubleDays, setDoubleDays] = useState<string[]>([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showDateRangePicker, setShowDateRangePicker] = useState(false);
@@ -202,12 +201,6 @@ const ApprovedHoursPage: React.FC = () => {
         setTotalDoubleTimeHours(doubleTimeHours);
         // FIXED: Double-time hours should be added as a bonus to regular hours
         setTotalPayableHours(regularHours + doubleTimeHours);
-        
-        // Calculate total Days to Credit
-        const totalDaysCredit = employeesToCalculate.reduce((sum, employee) => {
-          return sum + (employee.days_to_credit || 0);
-        }, 0);
-        setTotalDaysToCredit(totalDaysCredit);
       } catch (error) {
         console.error('Error loading approved hours:', error);
         toast.error('Failed to load approved hours data');
@@ -360,13 +353,6 @@ const ApprovedHoursPage: React.FC = () => {
         
         setTotalHours(totalHoursSum || 0);
         setTotalEmployees(selectedEmployees.length > 0 ? selectedEmployees.length : data?.length || 0);
-        
-        // Recalculate Days to Credit after deletion
-        const totalDaysCredit = (data || []).reduce((sum, employee) => {
-          return sum + (employee.days_to_credit || 0);
-        }, 0);
-        setTotalDaysToCredit(totalDaysCredit);
-        
         setDailyRecords([]);
         setExpandedEmployee(null);
       } else {
@@ -705,10 +691,6 @@ const ApprovedHoursPage: React.FC = () => {
                     <div className="text-lg font-bold text-green-900">{(totalHours + totalDoubleTimeHours).toFixed(2)}</div>
                   </div>
                 </div>
-                <div className="bg-purple-50 p-3 rounded-md">
-                  <p className="text-xs text-purple-600 font-medium">Days to Credit</p>
-                  <div className="text-lg font-bold text-purple-900">{totalDaysToCredit.toFixed(2)}</div>
-                </div>
               </div>
 
               {/* Filter and Export */}
@@ -834,12 +816,11 @@ const ApprovedHoursPage: React.FC = () => {
             ) : (
               <div className="border border-gray-200 rounded-md overflow-hidden">
                 {/* Table Header */}
-                <div className="grid grid-cols-7 gap-2 bg-gray-50 p-4 text-sm font-medium text-gray-600">
+                <div className="grid grid-cols-6 gap-2 bg-gray-50 p-4 text-sm font-medium text-gray-600">
                   <div className="col-span-2">Employee</div>
                   <div>Total Days</div>
                   <div>Total Hours</div>
                   <div>Avg Hours/Day</div>
-                  <div>Days to Credit</div>
                   <div>Actions</div>
                 </div>
 

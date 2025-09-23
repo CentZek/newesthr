@@ -449,29 +449,6 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
       // Calculate working days (total_days - off_days)
       const workingDays = emp.total_days.size - offDaysCount;
       
-      // Calculate Days to Credit using 30-day base system:
-      // = 30 + (TotalDays - 30) - max(OffDays - 4, 0) + min(4 - OffDays, 0) + DoubleTimeDaysWorked + OverTimeDays
-      const offDaysOver4 = Math.max(offDaysCount - 4, 0);
-      const offDaysUnder4 = Math.max(4 - offDaysCount, 0);
-      
-      // Count double-time days where actual work was done (hours > 0)
-      let doubleTimeDaysWorked = 0;
-      workingDates.forEach(dateStr => {
-        const hours = emp.hours_by_date?.[dateStr] || 0;
-        const isDoubletime = doubleDays.includes(dateStr) || isFriday(parseISO(dateStr));
-        
-        // Only count if work was actually done (hours > 0)
-        if (isDoubletime && hours > 0) {
-          doubleTimeDaysWorked++;
-        }
-      });
-      
-      // For now, overtime days is 0 (can be implemented later based on business rules)
-      const overtimeDays = 0;
-      
-      // Calculate Days to Credit
-      const daysToCredit = 30 + (emp.total_days.size - 30) - offDaysOver4 + offDaysUnder4 + doubleTimeDaysWorked + overtimeDays;
-      
       return {
         ...emp,
         total_days: emp.total_days.size,
@@ -479,12 +456,7 @@ export const fetchApprovedHours = async (dateFilter: string = ''): Promise<{
         off_days_count: offDaysCount,
         total_hours: parseFloat(emp.total_hours.toFixed(2)),
         double_time_hours: parseFloat(doubleTimeHours.toFixed(2)),
-        working_week_dates: Array.from(emp.working_week_dates),
-        days_to_credit: parseFloat(daysToCredit.toFixed(2)),
-        double_time_days_worked: doubleTimeDaysWorked,
-        off_days_over_4: offDaysOver4,
-        off_days_under_4: offDaysUnder4,
-        overtime_days: overtimeDays
+        working_week_dates: Array.from(emp.working_week_dates)
       };
     });
     
