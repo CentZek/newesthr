@@ -1226,7 +1226,7 @@ export const exportApprovedHoursToExcel = (data: {
 }): void => {
   // Create worksheets for summary and details
   const summaryData = [
-    ['Employee Number', 'Name', 'Total Days', 'Working Days', 'Off-Days', 'Regular Hours', 'Regular Days', 'Double-Time Hours', 'Double-Time Days', 'Fridays Worked', 'Over Time (Hours)', 'Over Time (Days)', 'Total Payable Hours', 'Days to Credit']
+    ['Employee Number', 'Name', 'Total Days', 'Working Days', 'Off-Days', 'Regular Hours', 'Regular Days', 'Double-Time Hours', 'Double-Time Days', 'Fridays Worked', 'Over Time (Hours)', 'Over Time (Days)', 'Total Payable Hours', 'Days to Credit', 'Credit no Over-time']
   ];
   
   const detailsData = [
@@ -1302,12 +1302,18 @@ export const exportApprovedHoursToExcel = (data: {
     const doubleTimeDays = parseFloat((doubleTimeHours / 9).toFixed(2));
     
     // Calculate Days to Credit using 30-day basis formula:
-    // = 30 + (TotalDays - 30) - max(OffDays - 4, 0) + DoubleTimeDays + OverTimeDays
+    // = 30 + (4 - OffDays) + DoubleTimeDays + OverTimeDays
+    // Always start with 30, adjust for off-days (4 is standard), add double-time and overtime
     const daysToCredit = 30 + 
-                        (emp.total_days - 30) - 
-                        Math.max(offDays - 4, 0) + 
+                        (4 - offDays) + 
                         doubleTimeDays + 
                         overtimeDays;
+
+    // Calculate Credit no Over-time (same as Days to Credit but without overtime)
+    // = 30 + (4 - OffDays) + DoubleTimeDays
+    const creditNoOvertime = 30 + 
+                            (4 - offDays) + 
+                            doubleTimeDays;
     
     summaryData.push([
       emp.employee_number,
@@ -1323,7 +1329,8 @@ export const exportApprovedHoursToExcel = (data: {
       overtimeHours.toFixed(2),
       overtimeDays.toFixed(2),
       totalPayableHours.toFixed(2),
-      daysToCredit
+      daysToCredit,
+      creditNoOvertime.toFixed(2)
     ]);
   });
   
